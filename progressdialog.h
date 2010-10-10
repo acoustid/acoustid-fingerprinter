@@ -14,16 +14,20 @@ public:
     ~ProgressDialog();
 
 signals:
-    void stop();
+    void stopClicked();
+    void pauseClicked();
+    void resumeClicked();
 
 public slots:
     void setMainStatus(const QString &message);
     void configureProgressBar(int maximum);
     void setProgress(int value);
+    void togglePause(bool);
 
 private:
     void setupUi();
 
+    QPushButton *m_pauseButton;
     QProgressBar *m_progressBar;
     QLabel *m_mainStatusLabel;
 };

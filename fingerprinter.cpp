@@ -15,6 +15,31 @@ Fingerprinter::Fingerprinter(const QString &apiKey, const QStringList &directori
     connect(m_analyzeWatcher, SIGNAL(finished()), SLOT(finish()));
 }
 
+void Fingerprinter::pause()
+{
+    if (!m_fileListWatcher->isPaused()) {
+        m_fileListWatcher->pause();
+        m_analyzeWatcher->pause();
+    }
+}
+
+void Fingerprinter::resume()
+{
+    if (m_fileListWatcher->isPaused()) {
+        m_fileListWatcher->resume();
+        m_analyzeWatcher->resume();
+    }
+}
+
+void Fingerprinter::stop()
+{
+    if (!m_fileListWatcher->isCanceled()) {
+        emit mainStatusChanged(tr("Stopping..."));
+        m_fileListWatcher->cancel();
+        m_analyzeWatcher->cancel();
+    }
+}
+
 void Fingerprinter::removeDuplicateDirectories()
 {
     int directoryCount = m_directories.size();
@@ -156,3 +181,4 @@ void Fingerprinter::finish()
 {
     emit mainStatusChanged(tr("Finished"));
 }
+

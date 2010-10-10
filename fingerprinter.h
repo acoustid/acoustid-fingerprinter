@@ -35,6 +35,11 @@ signals:
     void fileListLoaded(int fileCount);
     void fileProcessed(int processedFileCount);
 
+public slots:
+    void pause();
+    void resume();
+    void stop();
+
 private slots:
     void startReadingFileList(const QStringList &directories);
     void startFingerprintingFiles();
