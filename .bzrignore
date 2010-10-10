@@ -1,0 +1,6 @@
+Makefile
+./fpsubmit
+moc_*.cxx
+cmake_install.cmake
+CMakeFiles
+CMakeCache.txt
