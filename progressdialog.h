@@ -23,11 +23,16 @@ public slots:
     void configureProgressBar(int maximum);
     void setProgress(int value);
     void togglePause(bool);
+    void stop();
+
+protected:
+    void closeEvent(QCloseEvent *event);
 
 private:
     void setupUi();
 
     QPushButton *m_pauseButton;
+    QPushButton *m_stopButton;
     QProgressBar *m_progressBar;
     QLabel *m_mainStatusLabel;
 };

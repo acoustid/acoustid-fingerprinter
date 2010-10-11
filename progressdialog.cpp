@@ -9,6 +9,7 @@
 #include <QTreeView>
 #include <QPushButton>
 #include <QDebug>
+#include <QCloseEvent>
 #include "progressdialog.h"
 
 ProgressDialog::ProgressDialog(QWidget *parent)
@@ -25,8 +26,8 @@ void ProgressDialog::setupUi()
 {
 	m_mainStatusLabel = new QLabel(tr("Starting..."));
 
-	QPushButton *stopButton = new QPushButton(tr("&Stop"));
-	connect(stopButton, SIGNAL(clicked()), SIGNAL(stopClicked()));
+	m_stopButton = new QPushButton(tr("&Stop"));
+	connect(m_stopButton, SIGNAL(clicked()), SLOT(stop()));
 
 	m_pauseButton = new QPushButton(tr("&Pause"));
 	m_pauseButton->setCheckable(true);
@@ -34,7 +35,7 @@ void ProgressDialog::setupUi()
 
 	QDialogButtonBox *buttonBox = new QDialogButtonBox();
 	buttonBox->addButton(m_pauseButton, QDialogButtonBox::ActionRole);
-	buttonBox->addButton(stopButton, QDialogButtonBox::ActionRole);
+	buttonBox->addButton(m_stopButton, QDialogButtonBox::ActionRole);
 
 	m_progressBar = new QProgressBar();
 	m_progressBar->setMinimum(0);
@@ -69,15 +70,25 @@ void ProgressDialog::setProgress(int value)
 	m_progressBar->setValue(value);
 }
 
+void ProgressDialog::stop()
+{
+	emit stopClicked();
+	m_pauseButton->setEnabled(false);
+	m_stopButton->setEnabled(false);
+}
+
+void ProgressDialog::closeEvent(QCloseEvent *event)
+{
+	stop();
+	event->ignore();
+}
+
 void ProgressDialog::togglePause(bool checked)
 {
-	qDebug() << "togglePause" << checked;
 	if (checked) {
-		m_pauseButton->setText(tr("&Resume"));
 		emit pauseClicked();
 	}
 	else {
-		m_pauseButton->setText(tr("&Pause"));
 		emit resumeClicked();
 	}
 }

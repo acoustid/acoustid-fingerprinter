@@ -121,6 +121,11 @@ void Fingerprinter::startFingerprintingFiles()
 
 void Fingerprinter::processFileList()
 {
+    if (m_fileListWatcher->isCanceled()) {
+        emit mainStatusChanged(tr("Canceled"));
+        return;
+    }
+
     QSet<QString> extensions = QSet<QString>()
         << ".MP3"
         << ".MP4"
@@ -179,6 +184,11 @@ void Fingerprinter::processAnalyzedFile(int index)
 
 void Fingerprinter::finish()
 {
-    emit mainStatusChanged(tr("Finished"));
+    if (m_analyzeWatcher->isCanceled()) {
+        emit mainStatusChanged(tr("Canceled"));
+    }
+    else {
+        emit mainStatusChanged(tr("Finished"));
+    }
 }
 
