@@ -6,7 +6,9 @@
 #include <QDesktopServices>
 #include <QMutexLocker>
 #include "fingerprinter.h"
+#include "decoder.h"
 #include "tagreader.h"
+#include "constants.h"
 
 Fingerprinter::Fingerprinter(const QString &apiKey, const QStringList &directories)
     : m_apiKey(apiKey), m_directories(directories), m_counter(0), m_finished(false)
@@ -80,8 +82,6 @@ static QFileInfoList getEntryInfoList(const QString &path)
     return QDir(path).entryInfoList(QDir::AllEntries | QDir::NoDotAndDotDot);
 }
 
-#include "decoder.h"
-
 static AnalyzeResult *analyzeFile(const QString &path)
 {
     AnalyzeResult *result = new AnalyzeResult();
@@ -107,7 +107,7 @@ static AnalyzeResult *analyzeFile(const QString &path)
 
     FingerprintCalculator fpcalculator;
     fpcalculator.start(decoder.SampleRate(), decoder.Channels());
-    decoder.Decode(&fpcalculator, 120);
+    decoder.Decode(&fpcalculator, AUDIO_LENGTH);
     result->fingerprint = fpcalculator.finish();
 
     return result;
@@ -235,16 +235,15 @@ void Fingerprinter::processFilteredFileList()
 	emit mainStatusChanged(tr("Fingerprinting..."));
 	emit fileListLoaded(m_files.size());
 
-	//delete m_filterFileListWatcher;
-//	m_filterFileListWatcher = 0;
+	m_filterFileListWatcher->deleteLater();
+	m_filterFileListWatcher = 0;
 }
 
 QByteArray Fingerprinter::prepareSubmitData()
 {
 	QUrl url;
-	//url.addQueryItem("user", apiKey);
-	url.addQueryItem("user", "aaa");
-	url.addQueryItem("client", "aaa");
+	url.addQueryItem("user", m_apiKey);
+	url.addQueryItem("client", CLIENT_API_KEY);
 	for (int i = 0; i < m_submitQueue.size(); i++) {
 		AnalyzeResult *result = m_submitQueue.at(i);
 		url.addQueryItem(QString("length.%1").arg(i), QString::number(result->length));
@@ -263,8 +262,7 @@ QByteArray Fingerprinter::prepareSubmitData()
 
 QNetworkRequest Fingerprinter::prepareSubmitRequest()
 {
-	QNetworkRequest request(QUrl::fromEncoded("http://127.0.0.1:8080/submit"));
-	//QNetworkRequest request(QUrl::fromEncoded("http://api.acoustid.org/submit"));
+	QNetworkRequest request(QUrl::fromEncoded(SUBMIT_URL));
 	return request;
 }
 
@@ -281,6 +279,7 @@ struct UpdateCacheTask: public QRunnable
 		qDebug() << "updating cache";
 		QMutexLocker locker(&m_mutex);
 		QString fileName = cacheFileName();
+		QDir().mkpath(QDir::cleanPath(fileName + "/.."));
 		QFile file(fileName);
 		if (!file.open(QIODevice::Append)) {
 			qCritical() << "Couldn't open cache file" << fileName << "for writing";
@@ -302,7 +301,7 @@ QMutex UpdateCacheTask::m_mutex;
 bool Fingerprinter::maybeSubmitQueue(bool force)
 {
 	int queueSize = m_submitQueue.size();
-	if (queueSize >= 10 || (force && queueSize > 0)) {
+	if (queueSize >= 100 || (force && queueSize > 0)) {
 		qDebug() << "Submitting" << m_submitQueue.size() << "items";
 		m_networkAccessManager->post(prepareSubmitRequest(), prepareSubmitData());
 		qDebug() << "Data:" << prepareSubmitData();
@@ -319,7 +318,7 @@ bool Fingerprinter::maybeSubmitQueue(bool force)
 		m_submitQueue.clear();
 		UpdateCacheTask *task = new UpdateCacheTask(fileNames);
 		task->setAutoDelete(true);
-		QThreadPool::globalInstance()->start(task, 100);
+		QThreadPool::globalInstance()->start(task, 10);
 		return true;
 	}
 	return false;

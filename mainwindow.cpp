@@ -9,12 +9,12 @@
 #include <QTreeView>
 #include <QPushButton>
 #include <QDebug>
+#include <QSettings>
 #include "progressdialog.h"
 #include "checkabledirmodel.h"
 #include "fingerprinter.h"
 #include "mainwindow.h"
-
-static const char *API_KEY_URL = "http://acoustid.org/api-key";
+#include "constants.h"
 
 MainWindow::MainWindow()
 {
@@ -47,6 +47,9 @@ void MainWindow::setupUi()
 	m_apiKeyEdit = new QLineEdit();
 	QPushButton *apiKeyButton = new QPushButton(tr("&Get API key..."));
 	connect(apiKeyButton, SIGNAL(clicked()), SLOT(openAcoustidWebsite()));
+
+	QSettings settings;
+	m_apiKeyEdit->setText(settings.value("apikey").toString());
 
 	QHBoxLayout *apiKeyLayout = new QHBoxLayout();
 	apiKeyLayout->addWidget(m_apiKeyEdit);
@@ -87,6 +90,8 @@ void MainWindow::fingerprint()
 	if (!validateFields(apiKey, directories)) {
 		return;
 	}
+	QSettings settings;
+	settings.setValue("apikey", apiKey);
 	Fingerprinter *fingerprinter = new Fingerprinter(apiKey, directories);
     ProgressDialog *progressDialog = new ProgressDialog(this, fingerprinter);
 	fingerprinter->start();
