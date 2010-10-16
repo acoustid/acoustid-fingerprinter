@@ -88,13 +88,7 @@ void MainWindow::fingerprint()
 		return;
 	}
 	Fingerprinter *fingerprinter = new Fingerprinter(apiKey, directories);
-    ProgressDialog *progressDialog = new ProgressDialog(this);
-    connect(fingerprinter, SIGNAL(mainStatusChanged(const QString &)), progressDialog, SLOT(setMainStatus(const QString &)));
-    connect(fingerprinter, SIGNAL(fileListLoaded(int)), progressDialog, SLOT(configureProgressBar(int)));
-    connect(fingerprinter, SIGNAL(fileProcessed(int)), progressDialog, SLOT(setProgress(int)));
-    connect(progressDialog, SIGNAL(pauseClicked()), fingerprinter, SLOT(pause()));
-    connect(progressDialog, SIGNAL(resumeClicked()), fingerprinter, SLOT(resume()));
-    connect(progressDialog, SIGNAL(stopClicked()), fingerprinter, SLOT(stop()));
+    ProgressDialog *progressDialog = new ProgressDialog(this, fingerprinter);
 	fingerprinter->start();
     progressDialog->setModal(true);
     progressDialog->show();

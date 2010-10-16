@@ -12,10 +12,14 @@
 #include <QCloseEvent>
 #include "progressdialog.h"
 
-ProgressDialog::ProgressDialog(QWidget *parent)
-	: QDialog(parent)
+ProgressDialog::ProgressDialog(QWidget *parent, Fingerprinter *fingerprinter)
+	: QDialog(parent), m_fingerprinter(fingerprinter)
 {
 	setupUi();
+    connect(fingerprinter, SIGNAL(mainStatusChanged(const QString &)), SLOT(setMainStatus(const QString &)));
+    connect(fingerprinter, SIGNAL(fileListLoaded(int)), SLOT(configureProgressBar(int)));
+    connect(fingerprinter, SIGNAL(fileProcessed(int)), SLOT(setProgress(int)));
+    connect(fingerprinter, SIGNAL(finished()), SLOT(close()));
 }
 
 ProgressDialog::~ProgressDialog()
@@ -72,24 +76,29 @@ void ProgressDialog::setProgress(int value)
 
 void ProgressDialog::stop()
 {
-	emit stopClicked();
+	m_fingerprinter->stop();
 	m_pauseButton->setEnabled(false);
 	m_stopButton->setEnabled(false);
 }
 
 void ProgressDialog::closeEvent(QCloseEvent *event)
 {
-	stop();
-	event->ignore();
+	if (!m_fingerprinter->isFinished()) {
+		stop();
+		event->ignore();
+	}
+	else {
+		event->accept();
+	}
 }
 
 void ProgressDialog::togglePause(bool checked)
 {
 	if (checked) {
-		emit pauseClicked();
+		m_fingerprinter->pause();
 	}
 	else {
-		emit resumeClicked();
+		m_fingerprinter->resume();
 	}
 }
 

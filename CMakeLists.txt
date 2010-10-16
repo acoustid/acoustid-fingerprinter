@@ -34,6 +34,11 @@ qt4_wrap_cpp(fpsubmit_MOC ${fpsubmit_HEADERS})
 qt4_wrap_ui(fpsubmit_UIS_H ${fpsubmit_UIS})
 qt4_add_resources(fpsubmit_RESOURCES_CPP ${fpsubmit_RESOURCES})
 
+add_definitions(
+	-D__STDC_LIMIT_MACROS
+	-D__STDC_CONSTANT_MACROS
+)
+
 include_directories(
 	${CMAKE_CURRENT_BINARY_DIR}
 	${FFMPEG_LIBAVCODEC_INCLUDE_DIRS}

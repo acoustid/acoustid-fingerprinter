@@ -4,19 +4,15 @@
 #include <QDialog>
 #include <QProgressBar>
 #include <QLabel>
+#include "fingerprinter.h"
 
 class ProgressDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    ProgressDialog(QWidget *parent = 0);
+    ProgressDialog(QWidget *parent, Fingerprinter *fingerprinter);
     ~ProgressDialog();
-
-signals:
-    void stopClicked();
-    void pauseClicked();
-    void resumeClicked();
 
 public slots:
     void setMainStatus(const QString &message);
@@ -31,6 +27,7 @@ protected:
 private:
     void setupUi();
 
+	Fingerprinter *m_fingerprinter;
     QPushButton *m_pauseButton;
     QPushButton *m_stopButton;
     QProgressBar *m_progressBar;
