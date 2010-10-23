@@ -116,12 +116,12 @@ void Fingerprinter::onFileAnalyzed(AnalyzeResult *result)
 		fingerprintNextFile();
 	}
 	if (m_activeFiles == 0 && m_files.isEmpty()) {
+		if (m_submitQueue.isEmpty()) {
+			m_finished = true;
+			emit finished();
+			return;
+		}
 		maybeSubmit(true);
-	}
-	if (m_activeFiles == 0 && m_submitQueue.isEmpty() && m_files.isEmpty()) {
-		m_finished = true;
-		emit finished();
-		return;
 	}
 }
 
