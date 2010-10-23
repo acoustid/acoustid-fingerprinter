@@ -3,25 +3,12 @@
 
 #include <QObject>
 #include <QDir>
-#include <QFutureWatcher>
 #include <QMutex>
 #include <QNetworkAccessManager>
-#include <QNetworkRequest>
+#include <QTime>
 
-struct AnalyzeResult
-{
-    AnalyzeResult() : error(false)
-    {
-    }
-
-    QString fileName;
-    QString mbid;
-    QString fingerprint;
-    int length;
-    int bitrate;
-    bool error;
-    QString errorMessage;
-};
+class AnalyzeResult;
+class QNetworkReply;
 
 class Fingerprinter : public QObject 
 {
@@ -31,45 +18,52 @@ public:
     Fingerprinter(const QString &apiKey, const QStringList &directories);
     ~Fingerprinter();
 
-    void start();
-	bool isFinished() { return m_finished; }
+	bool isPaused();
+	bool isCancelled();
+	bool isRunning();
+	bool isFinished();
+
+	int submitttedFingerprints() const { return m_submittedFiles; }
 
 signals:
-    void mainStatusChanged(const QString &message);
-    void fileListLoaded(int fileCount);
-    void fileProcessed(int processedFileCount);
+    void statusChanged(const QString &message);
+    void currentPathChanged(const QString &path);
+	void fileListLoadingStarted();
+	void fingerprintingStarted(int fileCount);
+	void progress(int i);
 	void finished();
 
 public slots:
+    void start();
     void pause();
     void resume();
-    void stop();
+    void cancel();
 
 private slots:
-    void startReadingFileList(const QStringList &directories);
-    void startFingerprintingFiles();
-    void processFileList();
-    void processFilteredFileList();
-    void processAnalyzedFile(int index);
-    void finish();
+	void onFileListLoaded(const QStringList &files);
+	void onFileAnalyzed(AnalyzeResult *);
+	void onRequestFinished(QNetworkReply *reply);
 
 private:
-    void removeDuplicateDirectories();
-	bool maybeSubmitQueue(bool force = false);
-	QByteArray prepareSubmitData();
-	QNetworkRequest prepareSubmitRequest();
+	void fingerprintNextFile();
+	bool maybeSubmit(bool force=false);
 
     QString m_apiKey;
     QStringList m_files;
     QStringList m_directories;
-    QFutureWatcher<QFileInfoList> *m_fileListWatcher;
-    QFutureWatcher<AnalyzeResult *> *m_analyzeWatcher;
-	QFutureWatcher<QStringList> *m_filterFileListWatcher;
-	QList<AnalyzeResult *> m_submitQueue;
-    int m_counter;
-	bool m_finished;
-	QMutex m_cacheMutex;
 	QNetworkAccessManager *m_networkAccessManager;
+	QList<AnalyzeResult *> m_submitQueue;
+	QStringList m_submitting;
+	QStringList m_submitted;
+	QNetworkReply *m_reply;
+
+	QTime m_time;
+	int m_fingerprintedFiles;
+	int m_submittedFiles;
+	int m_activeFiles;
+	bool m_cancelled;
+	bool m_paused;
+	bool m_finished;
 };
 
 #endif

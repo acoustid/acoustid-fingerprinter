@@ -16,6 +16,8 @@ set(fpsubmit_HEADERS
 	progressdialog.h
 	fingerprinter.h
 	mainwindow.h
+	loadfilelisttask.h
+	analyzefiletask.h
 )
 set(fpsubmit_SOURCES
 	checkabledirmodel.cpp
@@ -26,6 +28,8 @@ set(fpsubmit_SOURCES
 	mainwindow.cpp
 	decoder.cpp
 	main.cpp
+	loadfilelisttask.cpp
+	analyzefiletask.cpp
 )
 #set(fpsubmit_UIS fpsubmit.ui)
 #set(fpsubmit_RESOURCES fpsubmit.qrc)

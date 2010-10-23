@@ -1,70 +1,23 @@
 #include <QDebug>
 #include <QDir>
 #include <QUrl>
-#include <QtConcurrentMap>
+#include <QNetworkReply>
+#include <QNetworkRequest>
 #include <QtConcurrentRun>
 #include <QDesktopServices>
 #include <QMutexLocker>
+#include "loadfilelisttask.h"
+#include "analyzefiletask.h"
 #include "fingerprinter.h"
-#include "decoder.h"
-#include "tagreader.h"
 #include "constants.h"
+#include "utils.h"
 
 Fingerprinter::Fingerprinter(const QString &apiKey, const QStringList &directories)
-    : m_apiKey(apiKey), m_directories(directories), m_counter(0), m_finished(false)
+    : m_apiKey(apiKey), m_directories(directories), m_paused(false), m_cancelled(false),
+	  m_finished(false), m_reply(0), m_activeFiles(0), m_fingerprintedFiles(0), m_submittedFiles(0)
 {
-    removeDuplicateDirectories();
-    m_fileListWatcher = new QFutureWatcher<QFileInfoList>(this);
-    connect(m_fileListWatcher, SIGNAL(finished()), SLOT(processFileList()));
-    m_analyzeWatcher = new QFutureWatcher<AnalyzeResult *>(this);
-    connect(m_analyzeWatcher, SIGNAL(resultReadyAt(int)), SLOT(processAnalyzedFile(int)));
-    connect(m_analyzeWatcher, SIGNAL(finished()), SLOT(finish()));
-	m_networkAccessManager = new QNetworkAccessManager();
-	qDebug() << QDesktopServices::storageLocation(QDesktopServices::CacheLocation);
-}
-
-void Fingerprinter::pause()
-{
-    if (!m_fileListWatcher->isPaused()) {
-        m_fileListWatcher->pause();
-        m_analyzeWatcher->pause();
-    }
-}
-
-void Fingerprinter::resume()
-{
-    if (m_fileListWatcher->isPaused()) {
-        m_fileListWatcher->resume();
-        m_analyzeWatcher->resume();
-    }
-}
-
-void Fingerprinter::stop()
-{
-    if (!m_fileListWatcher->isCanceled()) {
-        emit mainStatusChanged(tr("Stopping..."));
-        m_fileListWatcher->cancel();
-        m_analyzeWatcher->cancel();
-    }
-}
-
-void Fingerprinter::removeDuplicateDirectories()
-{
-    int directoryCount = m_directories.size();
-    QList<QString> sortedDirectories;
-    for (int i = 0; i < directoryCount; i++) {
-        sortedDirectories.append(QDir(m_directories.at(i)).canonicalPath() + QDir::separator());
-    }
-    qSort(sortedDirectories);
-    m_directories.clear();
-    m_directories.append(sortedDirectories.first());
-    for (int j = 0, i = 1; i < directoryCount; i++) {
-        QString path = sortedDirectories.at(i);
-        if (!path.startsWith(m_directories.at(j))) {
-            m_directories.append(path);
-            j++;
-        }
-    }
+	m_networkAccessManager = new QNetworkAccessManager(this);
+	connect(m_networkAccessManager, SIGNAL(finished(QNetworkReply *)), SLOT(onRequestFinished(QNetworkReply*)));
 }
 
 Fingerprinter::~Fingerprinter()
@@ -73,288 +26,155 @@ Fingerprinter::~Fingerprinter()
 
 void Fingerprinter::start()
 {
-    emit mainStatusChanged(tr("Reading file list..."));
-    startReadingFileList(m_directories);
+	m_time.start();
+	LoadFileListTask *task = new LoadFileListTask(m_directories);
+	connect(task, SIGNAL(finished(const QStringList &)), SLOT(onFileListLoaded(const QStringList &)));
+	connect(task, SIGNAL(currentPathChanged(const QString &)), SIGNAL(currentPathChanged(const QString &)));
+	task->setAutoDelete(true);
+	emit fileListLoadingStarted();
+	QThreadPool::globalInstance()->start(task);
 }
 
-static QFileInfoList getEntryInfoList(const QString &path)
+void Fingerprinter::pause()
 {
-    return QDir(path).entryInfoList(QDir::AllEntries | QDir::NoDotAndDotDot);
+	m_paused = true;
 }
 
-static AnalyzeResult *analyzeFile(const QString &path)
+void Fingerprinter::resume()
 {
-    AnalyzeResult *result = new AnalyzeResult();
-    result->fileName = path;
-
-    TagReader tags(path);
-    if (!tags.read()) {
-        result->error = true;
-        result->errorMessage = "Couldn't read metadata";
-        return result;
-    }
-
-    result->mbid = tags.mbid();
-    result->length = tags.length();
-    result->bitrate = tags.bitrate();
-
-    Decoder decoder(qPrintable(path));
-    if (!decoder.Open()) {
-        result->error = true;
-        result->errorMessage = "Couldn't open the file";
-        return result;
-    }
-
-    FingerprintCalculator fpcalculator;
-    fpcalculator.start(decoder.SampleRate(), decoder.Channels());
-    decoder.Decode(&fpcalculator, AUDIO_LENGTH);
-    result->fingerprint = fpcalculator.finish();
-
-    return result;
-}
-
-void Fingerprinter::startReadingFileList(const QStringList &directories)
-{
-    QFuture<QFileInfoList> results = QtConcurrent::mapped(directories, &getEntryInfoList);
-    m_fileListWatcher->setFuture(results);
-}
-
-void Fingerprinter::startFingerprintingFiles()
-{
-    QFuture<AnalyzeResult *> results = QtConcurrent::mapped(m_files, &analyzeFile);
-    m_analyzeWatcher->setFuture(results);
-}
-
-static QString extractExtension(const QString &fileName)
-{
-	int pos = fileName.lastIndexOf('.');
-	if (pos == -1) {
-		return "";
+	m_paused = false;
+	while (m_activeFiles < MAX_ACTIVE_FILES) {
+		fingerprintNextFile();
 	}
-    return fileName.mid(pos + 1).toUpper();
+	maybeSubmit();
 }
 
-static QString cacheFileName()
+void Fingerprinter::cancel()
 {
-	return QDesktopServices::storageLocation(QDesktopServices::CacheLocation) + "/acoustid-fingerprinter.log";
+	m_cancelled = true;
+	m_files.clear();
+	m_submitQueue.clear();
 }
 
-static QSet<QString> readCacheFile()
+bool Fingerprinter::isPaused()
 {
-	QString fileName = cacheFileName();
-	QFile file(fileName);
-	if (!file.open(QIODevice::ReadOnly)) {
-		qWarning() << "Couldn't open cache file" << fileName << "for reading";
-		return QSet<QString>();
+	return m_paused;
+}
+
+bool Fingerprinter::isCancelled()
+{
+	return m_cancelled;
+}
+
+bool Fingerprinter::isFinished()
+{
+	return m_finished;
+}
+
+bool Fingerprinter::isRunning()
+{
+	return !isPaused() && !isCancelled() && !isFinished();
+}
+
+void Fingerprinter::onFileListLoaded(const QStringList &files)
+{
+	m_files = files;
+	emit fingerprintingStarted(files.size());
+	while (m_activeFiles < MAX_ACTIVE_FILES) {
+		fingerprintNextFile();
 	}
-	QTextStream stream(&file);
-	stream.setCodec("UTF-8");
-	QSet<QString> result;
-	while (true) {
-		QString fileName = stream.readLine();
-		if (fileName.isEmpty()) {
-			break;
+}
+
+void Fingerprinter::fingerprintNextFile()
+{
+	if (m_files.isEmpty()) {
+		return;
+	}
+	m_activeFiles++;
+	QString path = m_files.takeFirst();
+	emit currentPathChanged(path);
+	AnalyzeFileTask *task = new AnalyzeFileTask(path);
+	connect(task, SIGNAL(finished(AnalyzeResult *)), SLOT(onFileAnalyzed(AnalyzeResult *)));
+	task->setAutoDelete(true);
+	QThreadPool::globalInstance()->start(task);
+}
+
+void Fingerprinter::onFileAnalyzed(AnalyzeResult *result)
+{
+	m_activeFiles--;
+	emit progress(++m_fingerprintedFiles);
+	if (!result->error) {
+		if (!isCancelled()) {
+			m_submitQueue.append(result);
 		}
-		result.insert(fileName);
-	}
-	return result;
-}
-
-static QStringList filterFileList(const QStringList &fileNames)
-{
-    QSet<QString> allowedExtensions = QSet<QString>()
-        << "MP3"
-        << "MP4"
-        << "M4A"
-        << "FLAC"
-        << "OGG"
-        << "OGA"
-        << "APE"
-        << "OGGFLAC"
-        << "TTA"
-        << "WV"
-        << "MPC"
-        << "WMA";
-
-	QStringList result;
-	QSet<QString> cache = readCacheFile();
-	foreach (QString fileName, fileNames) {
-		if (!allowedExtensions.contains(extractExtension(fileName))) {
-			continue;
+		if (isRunning()) {
+			maybeSubmit();
 		}
-		if (cache.contains(fileName)) {
-			qDebug() << "Already processed" << fileName;
-			continue;
-		}
-		result.append(fileName);
 	}
-	return result;
-}
-
-void Fingerprinter::processFileList()
-{
-    if (m_fileListWatcher->isCanceled()) {
-        emit mainStatusChanged(tr("Canceled"));
+	if (isRunning()) {
+		fingerprintNextFile();
+	}
+	if (m_activeFiles == 0 && m_submitQueue.isEmpty() && m_files.isEmpty()) {
 		m_finished = true;
 		emit finished();
-        return;
-    }
-
-    QStringList directories;
-    QFuture<QFileInfoList> results = m_fileListWatcher->future();
-    for (int i = 0; i < results.resultCount(); i++) {
-        QFileInfoList fileInfoList = results.resultAt(i); 
-        for (int j = 0; j < fileInfoList.size(); j++) {
-            QFileInfo fileInfo = fileInfoList.at(j);
-            if (fileInfo.isDir()) {
-                directories.append(fileInfo.filePath());
-            }
-            else {
-                m_files.append(fileInfo.filePath());
-            }
-        }
-    }
-    if (!directories.isEmpty()) {
-        startReadingFileList(directories);
-    }
-    else {
-		QFuture<QStringList> future = QtConcurrent::run(&filterFileList, m_files);
-		m_filterFileListWatcher = new QFutureWatcher<QStringList>();
-		m_filterFileListWatcher->setFuture(future);
-		connect(m_filterFileListWatcher, SIGNAL(finished()), SLOT(processFilteredFileList()));
-    }
-}
-
-void Fingerprinter::processFilteredFileList()
-{
-    QFuture<QStringList> future = m_filterFileListWatcher->future();
-
-	m_files = future.result();
-	startFingerprintingFiles();
-
-	emit mainStatusChanged(tr("Fingerprinting..."));
-	emit fileListLoaded(m_files.size());
-
-	m_filterFileListWatcher->deleteLater();
-	m_filterFileListWatcher = 0;
-}
-
-QByteArray Fingerprinter::prepareSubmitData()
-{
-	QUrl url;
-	url.addQueryItem("user", m_apiKey);
-	url.addQueryItem("client", CLIENT_API_KEY);
-	for (int i = 0; i < m_submitQueue.size(); i++) {
-		AnalyzeResult *result = m_submitQueue.at(i);
-		url.addQueryItem(QString("length.%1").arg(i), QString::number(result->length));
-		url.addQueryItem(QString("mbid.%1").arg(i), result->mbid);
-		url.addQueryItem(QString("fingerprint.%1").arg(i), result->fingerprint);
-		QString format = extractExtension(result->fileName);
-		if (!format.isEmpty()) {
-			url.addQueryItem(QString("format.%1").arg(i), format);
-		}
-		if (result->bitrate) {
-			url.addQueryItem(QString("bitrate.%1").arg(i), QString::number(result->bitrate));
-		}
+		return;
 	}
-	return url.encodedQuery();
 }
 
-QNetworkRequest Fingerprinter::prepareSubmitRequest()
+bool Fingerprinter::maybeSubmit(bool force)
 {
-	QNetworkRequest request(QUrl::fromEncoded(SUBMIT_URL));
-	return request;
-}
-
-struct UpdateCacheTask: public QRunnable
-{
-
-	UpdateCacheTask(const QStringList &fileNames)
-		: m_fileNames(fileNames)
-	{
-	}
-
-	void run()
-	{
-		qDebug() << "updating cache";
-		QMutexLocker locker(&m_mutex);
-		QString fileName = cacheFileName();
-		QDir().mkpath(QDir::cleanPath(fileName + "/.."));
-		QFile file(fileName);
-		if (!file.open(QIODevice::Append)) {
-			qCritical() << "Couldn't open cache file" << fileName << "for writing";
-			return;
+	int size = qMin(100, m_submitQueue.size());
+	if (!m_reply && (size >= 50 || (force && size > 0))) {
+		QUrl url;
+		url.addQueryItem("user", m_apiKey);
+		url.addQueryItem("client", CLIENT_API_KEY);
+		for (int i = 0; i < size; i++) {
+			AnalyzeResult *result = m_submitQueue.takeFirst();
+			url.addQueryItem(QString("length.%1").arg(i), QString::number(result->length));
+			url.addQueryItem(QString("mbid.%1").arg(i), result->mbid);
+			url.addQueryItem(QString("fingerprint.%1").arg(i), result->fingerprint);
+			QString format = extractExtension(result->fileName);
+			if (!format.isEmpty()) {
+				url.addQueryItem(QString("format.%1").arg(i), format);
+			}
+			if (result->bitrate) {
+				url.addQueryItem(QString("bitrate.%1").arg(i), QString::number(result->bitrate));
+			}
+			m_submitting.append(result->fileName);
+			delete result;
 		}
-		QTextStream stream(&file);
-		stream.setCodec("UTF-8");
-		foreach (QString fileName, m_fileNames) {
-			stream << fileName << "\n";
-		}
-	}
-
-	QStringList m_fileNames;
-	static QMutex m_mutex;
-};
-
-QMutex UpdateCacheTask::m_mutex;
-
-bool Fingerprinter::maybeSubmitQueue(bool force)
-{
-	int queueSize = m_submitQueue.size();
-	if (queueSize >= 100 || (force && queueSize > 0)) {
-		qDebug() << "Submitting" << m_submitQueue.size() << "items";
-		m_networkAccessManager->post(prepareSubmitRequest(), prepareSubmitData());
-		qDebug() << "Data:" << prepareSubmitData();
-        /*qDebug() << "\n" << result->fileName;
-        qDebug() << " > MBID " << result->mbid;
-        qDebug() << " > Length " << result->length;
-        qDebug() << " > Bitrate " << result->bitrate;
-        qDebug() << " > Fingerprint " << result->fingerprint;*/
-		QStringList fileNames;
-		foreach (AnalyzeResult *result, m_submitQueue) {
-			fileNames.append(result->fileName);
-		}
-		qDeleteAll(m_submitQueue);
-		m_submitQueue.clear();
-		UpdateCacheTask *task = new UpdateCacheTask(fileNames);
-		task->setAutoDelete(true);
-		QThreadPool::globalInstance()->start(task, 10);
+		m_reply = m_networkAccessManager->post(
+			QNetworkRequest(QUrl::fromEncoded(SUBMIT_URL)),
+			url.encodedQuery());
 		return true;
 	}
 	return false;
 }
 
-void Fingerprinter::processAnalyzedFile(int index)
+void Fingerprinter::onRequestFinished(QNetworkReply *reply)
 {
-    AnalyzeResult *result = m_analyzeWatcher->future().resultAt(index);
-    if (!result->error) {
-        qDebug() << "Finished " << result->fileName;
-		m_submitQueue.append(result);
-		maybeSubmitQueue();
-    }
-	else {
-        qDebug() << "Error " << result->fileName << "(" << result->errorMessage << ")";
-		delete result;
+	QNetworkReply::NetworkError error = reply->error();
+	if (error != QNetworkReply::NoError) {
+		qWarning() << "Submission failed with network error" << error;
 	}
-    emit fileProcessed(++m_counter);
-}
+	else {
+		m_submitted.append(m_submitting);
+		m_submittedFiles += m_submitting.size();
+		maybeSubmit();
+		qDebug() << "Submission finished"; 
+	}
 
-void Fingerprinter::finish()
-{
-    if (m_analyzeWatcher->isCanceled()) {
-        emit mainStatusChanged(tr("Canceled"));
+	m_submitting.clear();
+	reply->deleteLater();
+	m_reply = 0;
+
+	if (m_submitQueue.isEmpty() && m_files.isEmpty()) {
 		m_finished = true;
 		emit finished();
-    }
-    else {
-		if (maybeSubmitQueue(true)) {
-			emit mainStatusChanged(tr("Submitting"));
-		}
-		else {
-			emit mainStatusChanged(tr("Finished"));
-			m_finished = true;
-			emit finished();
-		}
-    }
-}
+		return;
+	}
 
+	if (isRunning()) {
+		maybeSubmit(m_files.isEmpty());
+	}
+}

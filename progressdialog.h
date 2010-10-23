@@ -15,11 +15,13 @@ public:
     ~ProgressDialog();
 
 public slots:
-    void setMainStatus(const QString &message);
-    void configureProgressBar(int maximum);
     void setProgress(int value);
     void togglePause(bool);
     void stop();
+	void onFileListLoadingStarted();
+	void onFingerprintingStarted(int count);
+	void onCurrentPathChanged(const QString &path);
+	void onFinished();
 
 protected:
     void closeEvent(QCloseEvent *event);
@@ -28,10 +30,12 @@ private:
     void setupUi();
 
 	Fingerprinter *m_fingerprinter;
+    QPushButton *m_closeButton;
     QPushButton *m_pauseButton;
     QPushButton *m_stopButton;
     QProgressBar *m_progressBar;
     QLabel *m_mainStatusLabel;
+    QLabel *m_currentPathLabel;
 };
 
 #endif
