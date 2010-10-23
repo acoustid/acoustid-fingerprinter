@@ -22,6 +22,8 @@ public slots:
 	void onFingerprintingStarted(int count);
 	void onCurrentPathChanged(const QString &path);
 	void onFinished();
+	void onNetworkError(const QString &message);
+	void onAuthenticationError();
 
 protected:
     void closeEvent(QCloseEvent *event);

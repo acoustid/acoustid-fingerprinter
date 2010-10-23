@@ -30,6 +30,7 @@ set(fpsubmit_SOURCES
 	main.cpp
 	loadfilelisttask.cpp
 	analyzefiletask.cpp
+	updatelogfiletask.cpp
 )
 #set(fpsubmit_UIS fpsubmit.ui)
 #set(fpsubmit_RESOURCES fpsubmit.qrc)

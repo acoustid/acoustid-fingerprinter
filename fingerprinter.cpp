@@ -8,6 +8,7 @@
 #include <QMutexLocker>
 #include "loadfilelisttask.h"
 #include "analyzefiletask.h"
+#include "updatelogfiletask.h"
 #include "fingerprinter.h"
 #include "constants.h"
 #include "utils.h"
@@ -153,15 +154,37 @@ bool Fingerprinter::maybeSubmit(bool force)
 
 void Fingerprinter::onRequestFinished(QNetworkReply *reply)
 {
+	bool stop = false;
 	QNetworkReply::NetworkError error = reply->error();
-	if (error != QNetworkReply::NoError) {
-		qWarning() << "Submission failed with network error" << error;
+
+	if (error == QNetworkReply::UnknownContentError) {
+		QString errorMessage = reply->readAll();
+		if (errorMessage.contains("User with the API key")) {
+			emit authenticationError();
+			stop = true;
+		}
+		else {
+			qWarning() << "Submittion failed:" << errorMessage;
+		}
 	}
-	else {
+	else if (error != QNetworkReply::NoError) {
+		qWarning() << "Submission failed with network error" << error;
+		emit networkError(reply->errorString());
+		stop = true;
+	}
+
+	if (!stop && error == QNetworkReply::NoError) {
 		m_submitted.append(m_submitting);
 		m_submittedFiles += m_submitting.size();
 		maybeSubmit();
 		qDebug() << "Submission finished"; 
+	}
+
+	if (m_submitted.size() > 0) {
+		UpdateLogFileTask *task = new UpdateLogFileTask(m_submitted);
+		task->setAutoDelete(true);
+		QThreadPool::globalInstance()->start(task);
+		m_submitted.clear();
 	}
 
 	m_submitting.clear();

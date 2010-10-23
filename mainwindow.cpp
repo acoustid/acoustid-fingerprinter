@@ -36,7 +36,9 @@ void MainWindow::setupUi()
 	treeView->hideColumn(2);
 	treeView->hideColumn(3);
 
-	const QModelIndex homePathIndex = m_directoryModel->index(QDir::homePath());
+//	QString homePath = QDir::homePath();
+	QString homePath = QDesktopServices::storageLocation(QDesktopServices::MusicLocation);
+	const QModelIndex homePathIndex = m_directoryModel->index(homePath);
 	treeView->expand(homePathIndex);
 	treeView->selectionModel()->setCurrentIndex(homePathIndex, QItemSelectionModel::ClearAndSelect);
 	treeView->scrollTo(homePathIndex);
@@ -61,8 +63,12 @@ void MainWindow::setupUi()
 	QPushButton *fingerprintButton = new QPushButton(tr("&Fingerprint..."));
 	connect(fingerprintButton, SIGNAL(clicked()), SLOT(fingerprint()));
 
+	QPushButton *closeButton = new QPushButton(tr("&Close"));
+	connect(closeButton, SIGNAL(clicked()), SLOT(close()));
+
 	QDialogButtonBox *buttonBox = new QDialogButtonBox();
 	buttonBox->addButton(fingerprintButton, QDialogButtonBox::ActionRole);
+	buttonBox->addButton(closeButton, QDialogButtonBox::RejectRole);
 
 	QVBoxLayout *mainLayout = new QVBoxLayout();
 	mainLayout->addWidget(apiKeyLabel);

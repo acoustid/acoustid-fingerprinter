@@ -32,6 +32,8 @@ signals:
 	void fingerprintingStarted(int fileCount);
 	void progress(int i);
 	void finished();
+	void networkError(const QString &message);
+	void authenticationError();
 
 public slots:
     void start();

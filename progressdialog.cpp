@@ -10,7 +10,9 @@
 #include <QPushButton>
 #include <QDebug>
 #include <QCloseEvent>
+#include <QMessageBox>
 #include "progressdialog.h"
+#include "constants.h"
 
 ProgressDialog::ProgressDialog(QWidget *parent, Fingerprinter *fingerprinter)
 	: QDialog(parent), m_fingerprinter(fingerprinter)
@@ -20,6 +22,8 @@ ProgressDialog::ProgressDialog(QWidget *parent, Fingerprinter *fingerprinter)
     connect(fingerprinter, SIGNAL(fingerprintingStarted(int)), SLOT(onFingerprintingStarted(int)));
     connect(fingerprinter, SIGNAL(currentPathChanged(const QString &)), SLOT(onCurrentPathChanged(const QString &)));
     connect(fingerprinter, SIGNAL(finished()), SLOT(onFinished()));
+    connect(fingerprinter, SIGNAL(networkError(const QString &)), SLOT(onNetworkError(const QString &)));
+    connect(fingerprinter, SIGNAL(authenticationError()), SLOT(onAuthenticationError()));
 }
 
 ProgressDialog::~ProgressDialog()
@@ -43,8 +47,8 @@ void ProgressDialog::setupUi()
 
 	QDialogButtonBox *buttonBox = new QDialogButtonBox();
 	buttonBox->addButton(m_pauseButton, QDialogButtonBox::ActionRole);
-	buttonBox->addButton(m_stopButton, QDialogButtonBox::ActionRole);
-	buttonBox->addButton(m_closeButton, QDialogButtonBox::ActionRole);
+	buttonBox->addButton(m_stopButton, QDialogButtonBox::RejectRole);
+	buttonBox->addButton(m_closeButton, QDialogButtonBox::RejectRole);
 	m_closeButton->setVisible(false);
 
 	m_progressBar = new QProgressBar();
@@ -108,6 +112,22 @@ void ProgressDialog::stop()
 	m_fingerprinter->cancel();
 	m_pauseButton->setEnabled(false);
 	m_stopButton->setEnabled(false);
+}
+
+
+void ProgressDialog::onNetworkError(const QString &message)
+{
+	stop();
+	QMessageBox::critical(this, tr("Network Error"), message);
+}
+
+void ProgressDialog::onAuthenticationError()
+{
+	stop();
+	QMessageBox::critical(this, tr("Error"),
+		tr("Invalid API key. Please check if the API key "
+		"you entered matches your key on the "
+		"<a href=\"%1\">Acoustid website</a>.").arg(API_KEY_URL));
 }
 
 void ProgressDialog::closeEvent(QCloseEvent *event)

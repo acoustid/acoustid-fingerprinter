@@ -69,11 +69,6 @@ void LoadFileListTask::processDirectory(const QString &path)
     }
 }
 
-static QString cacheFileName()
-{
-	return QDesktopServices::storageLocation(QDesktopServices::CacheLocation) + "/acoustid-fingerprinter.log";
-}
-
 static QSet<QString> readCacheFile()
 {
 	QString fileName = cacheFileName();
