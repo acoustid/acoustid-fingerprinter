@@ -24,6 +24,7 @@ public slots:
 	void onFinished();
 	void onNetworkError(const QString &message);
 	void onAuthenticationError();
+	void onNoFilesError();
 
 protected:
     void closeEvent(QCloseEvent *event);

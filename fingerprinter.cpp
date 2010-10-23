@@ -44,7 +44,7 @@ void Fingerprinter::pause()
 void Fingerprinter::resume()
 {
 	m_paused = false;
-	while (m_activeFiles < MAX_ACTIVE_FILES) {
+	while (!m_files.isEmpty() && m_activeFiles < MAX_ACTIVE_FILES) {
 		fingerprintNextFile();
 	}
 	maybeSubmit();
@@ -80,8 +80,14 @@ bool Fingerprinter::isRunning()
 void Fingerprinter::onFileListLoaded(const QStringList &files)
 {
 	m_files = files;
+	if (m_files.isEmpty()) {
+		m_finished = true;
+		emit noFilesError();
+		emit finished();
+		return;
+	}
 	emit fingerprintingStarted(files.size());
-	while (m_activeFiles < MAX_ACTIVE_FILES) {
+	while (!m_files.isEmpty() && m_activeFiles < MAX_ACTIVE_FILES) {
 		fingerprintNextFile();
 	}
 }

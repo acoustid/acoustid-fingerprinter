@@ -34,6 +34,7 @@ signals:
 	void finished();
 	void networkError(const QString &message);
 	void authenticationError();
+	void noFilesError();
 
 public slots:
     void start();

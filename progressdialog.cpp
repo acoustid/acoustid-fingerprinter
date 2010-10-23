@@ -24,6 +24,7 @@ ProgressDialog::ProgressDialog(QWidget *parent, Fingerprinter *fingerprinter)
     connect(fingerprinter, SIGNAL(finished()), SLOT(onFinished()));
     connect(fingerprinter, SIGNAL(networkError(const QString &)), SLOT(onNetworkError(const QString &)));
     connect(fingerprinter, SIGNAL(authenticationError()), SLOT(onAuthenticationError()));
+    connect(fingerprinter, SIGNAL(noFilesError()), SLOT(onNoFilesError()));
 }
 
 ProgressDialog::~ProgressDialog()
@@ -128,6 +129,12 @@ void ProgressDialog::onAuthenticationError()
 		tr("Invalid API key. Please check if the API key "
 		"you entered matches your key on the "
 		"<a href=\"%1\">Acoustid website</a>.").arg(API_KEY_URL));
+}
+
+void ProgressDialog::onNoFilesError()
+{
+	QMessageBox::critical(this, tr("Error"),
+		tr("There are no audio files in the selected folder(s)."));
 }
 
 void ProgressDialog::closeEvent(QCloseEvent *event)
