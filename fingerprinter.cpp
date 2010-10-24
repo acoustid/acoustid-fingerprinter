@@ -56,6 +56,9 @@ void Fingerprinter::cancel()
 	m_cancelled = true;
 	m_files.clear();
 	m_submitQueue.clear();
+	if (m_reply) {
+		m_reply->abort();
+	}
 }
 
 bool Fingerprinter::isPaused()
@@ -167,7 +170,10 @@ void Fingerprinter::onRequestFinished(QNetworkReply *reply)
 	bool stop = false;
 	QNetworkReply::NetworkError error = reply->error();
 
-	if (error == QNetworkReply::UnknownContentError) {
+	if (m_cancelled) {
+		stop = true;
+	}
+	else if (error == QNetworkReply::UnknownContentError) {
 		QString errorMessage = reply->readAll();
 		if (errorMessage.contains("User with the API key")) {
 			emit authenticationError();
