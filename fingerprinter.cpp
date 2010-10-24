@@ -12,6 +12,7 @@
 #include "fingerprinter.h"
 #include "constants.h"
 #include "utils.h"
+#include "gzip.h"
 
 Fingerprinter::Fingerprinter(const QString &apiKey, const QStringList &directories)
     : m_apiKey(apiKey), m_directories(directories), m_paused(false), m_cancelled(false),
@@ -133,8 +134,8 @@ void Fingerprinter::onFileAnalyzed(AnalyzeResult *result)
 
 bool Fingerprinter::maybeSubmit(bool force)
 {
-	int size = qMin(100, m_submitQueue.size());
-	if (!m_reply && (size >= 50 || (force && size > 0))) {
+	int size = qMin(MAX_BATCH_SIZE, m_submitQueue.size());
+	if (!m_reply && (size >= MIN_BATCH_SIZE || (force && size > 0))) {
 		QUrl url;
 		url.addQueryItem("user", m_apiKey);
 		url.addQueryItem("client", CLIENT_API_KEY);
@@ -153,9 +154,9 @@ bool Fingerprinter::maybeSubmit(bool force)
 			m_submitting.append(result->fileName);
 			delete result;
 		}
-		m_reply = m_networkAccessManager->post(
-			QNetworkRequest(QUrl::fromEncoded(SUBMIT_URL)),
-			url.encodedQuery());
+		QNetworkRequest request = QNetworkRequest(QUrl::fromEncoded(SUBMIT_URL));
+		request.setRawHeader("Content-Encoding", "gzip");
+		m_reply = m_networkAccessManager->post(request, gzipCompress(url.encodedQuery()));
 		return true;
 	}
 	return false;
