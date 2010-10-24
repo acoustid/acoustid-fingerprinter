@@ -12,7 +12,7 @@ UpdateLogFileTask::UpdateLogFileTask(const QStringList &files)
 void UpdateLogFileTask::run()
 {
 	QString fileName = cacheFileName();
-	qDebug() << "updating" << fileName;
+	qDebug() << "Updating" << fileName;
 	QDir().mkpath(QDir::cleanPath(fileName + "/.."));
 	QFile file(fileName);
 	if (!file.open(QIODevice::Append)) {

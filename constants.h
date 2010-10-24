@@ -9,6 +9,6 @@ static const int AUDIO_LENGTH = 120;
 static const int MAX_ACTIVE_FILES = 3;
 
 static const int MAX_BATCH_SIZE = 100;
-static const int MIN_BATCH_SIZE = 5;
+static const int MIN_BATCH_SIZE = 50;
 
 #endif

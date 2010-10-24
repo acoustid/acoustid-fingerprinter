@@ -139,11 +139,13 @@ bool Fingerprinter::maybeSubmit(bool force)
 {
 	int size = qMin(MAX_BATCH_SIZE, m_submitQueue.size());
 	if (!m_reply && (size >= MIN_BATCH_SIZE || (force && size > 0))) {
+		qDebug() << "Submitting" << size << "fingerprints";
 		QUrl url;
 		url.addQueryItem("user", m_apiKey);
 		url.addQueryItem("client", CLIENT_API_KEY);
 		for (int i = 0; i < size; i++) {
 			AnalyzeResult *result = m_submitQueue.takeFirst();
+			qDebug() << "  " << result->mbid;
 			url.addQueryItem(QString("length.%1").arg(i), QString::number(result->length));
 			url.addQueryItem(QString("mbid.%1").arg(i), result->mbid);
 			url.addQueryItem(QString("fingerprint.%1").arg(i), result->fingerprint);
