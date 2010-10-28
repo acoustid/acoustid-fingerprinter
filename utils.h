@@ -4,6 +4,11 @@
 #include <QString>
 #include <QDesktopServices>
 
+inline QString userAgentString()
+{
+	return QString("fpsubmit/%1 Qt/%2").arg(VERSION).arg(qVersion());
+}
+
 inline QString cacheFileName()
 {
 	return QDesktopServices::storageLocation(QDesktopServices::CacheLocation) + "/submitted.log";

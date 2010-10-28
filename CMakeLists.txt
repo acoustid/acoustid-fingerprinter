@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 
 project(fpsubmit)
+set(fpsubmit_VERSION 0.1dev)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
 
@@ -44,6 +45,7 @@ qt4_add_resources(fpsubmit_RESOURCES_CPP ${fpsubmit_RESOURCES})
 add_definitions(
 	-D__STDC_LIMIT_MACROS
 	-D__STDC_CONSTANT_MACROS
+	-DVERSION="${fpsubmit_VERSION}"
 )
 
 include_directories(
