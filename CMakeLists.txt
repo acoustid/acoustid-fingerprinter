@@ -62,6 +62,9 @@ add_executable(fpsubmit
     ${fpsubmit_RESOURCES_CPP}
 )
 
+set_target_properties(fpsubmit PROPERTIES
+	OUTPUT_NAME acoustid-fingerprinter)
+
 target_link_libraries(fpsubmit
 	${QT_LIBRARIES}
 	${FFMPEG_LIBAVFORMAT_LIBRARIES}
