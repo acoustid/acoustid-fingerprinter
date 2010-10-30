@@ -67,7 +67,11 @@ include_directories(
 	${CHROMAPRINT_INCLUDE_DIR}
 )
 
-add_executable(fpsubmit
+if(WIN32)
+set(GUI_TYPE WIN32)
+endif(WIN32)
+
+add_executable(fpsubmit ${GUI_TYPE}
     ${fpsubmit_SOURCES}
     ${fpsubmit_MOC}
     ${fpsubmit_UIS_H}
