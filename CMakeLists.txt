@@ -11,6 +11,10 @@ find_package(Chromaprint REQUIRED)
 
 include(${QT_USE_FILE})
 
+if(CMAKE_BUILD_TYPE STREQUAL Release OR CMAKE_BUILD_TYPE STREQUAL MinSizeRel OR CMAKE_BUILD_TYPE STREQUAL RelWithDebInfo)
+	add_definitions(-DQT_NO_DEBUG_OUTPUT)
+endif(CMAKE_BUILD_TYPE STREQUAL Release OR CMAKE_BUILD_TYPE STREQUAL MinSizeRel OR CMAKE_BUILD_TYPE STREQUAL RelWithDebInfo)
+
 set(fpsubmit_HEADERS
 	checkabledirmodel.h
 	progressdialog.h

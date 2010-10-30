@@ -1,3 +1,4 @@
+#include <QDebug>
 #include "decoder.h"
 #include "tagreader.h"
 #include "utils.h"
@@ -11,6 +12,8 @@ AnalyzeFileTask::AnalyzeFileTask(const QString &path)
 
 void AnalyzeFileTask::run()
 {
+    qDebug() << "Analyzing file" << m_path;
+
     AnalyzeResult *result = new AnalyzeResult();
     result->fileName = m_path;
 
