@@ -4,3 +4,4 @@ moc_*.cxx
 cmake_install.cmake
 CMakeFiles
 CMakeCache.txt
+./acoustid-fingerprinter

@@ -1,7 +1,13 @@
 cmake_minimum_required(VERSION 2.6)
 
 project(fpsubmit)
-set(fpsubmit_VERSION 0.1dev)
+set(fpsubmit_VERSION 0.1)
+
+set(LIB_SUFFIX "" CACHE STRING "Define suffix of directory name (32/64)")
+set(EXEC_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX} CACHE PATH "Installation prefix for executables and object code libraries" FORCE)
+set(BIN_INSTALL_DIR ${EXEC_INSTALL_PREFIX}/bin CACHE PATH "Installation prefix for user executables" FORCE)
+set(LIB_INSTALL_DIR ${EXEC_INSTALL_PREFIX}/lib${LIB_SUFFIX} CACHE PATH  "Installation prefix for object code libraries" FORCE)
+set(INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include CACHE PATH "Installation prefix for C header files" FORCE)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
 
@@ -80,3 +86,4 @@ target_link_libraries(fpsubmit
 	${CHROMAPRINT_LIBRARIES}
 )
 
+install(TARGETS fpsubmit DESTINATION ${BIN_INSTALL_DIR})

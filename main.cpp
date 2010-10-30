@@ -9,6 +9,7 @@ int main(int argc, char **argv)
 	app.setOrganizationName("Acoustid");
 	app.setOrganizationDomain("acoustid.org");
 	app.setApplicationName("Fingerprinter");
+	app.setApplicationVersion(VERSION);
 	MainWindow window;
 	window.show();
 	return app.exec();
