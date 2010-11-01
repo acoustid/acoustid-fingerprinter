@@ -59,9 +59,8 @@ public:
     static void initialize();
 
 private:
-	static const int BUFFER_SIZE = (AVCODEC_MAX_AUDIO_FRAME_SIZE * 3) / 2;
+	static const int BUFFER_SIZE = AVCODEC_MAX_AUDIO_FRAME_SIZE * 2;
 	uint8_t *m_buffer1;
-	uint8_t *m_buffer2;
 	std::string m_file_name;
 	std::string m_error;
 	AVFormatContext *m_format_ctx;
@@ -102,7 +101,6 @@ inline Decoder::Decoder(const std::string &file_name)
 	/*, m_convert_ctx(0)*/
 {
 	m_buffer1 = (uint8_t *)av_malloc(BUFFER_SIZE);
-	m_buffer2 = (uint8_t *)av_malloc(BUFFER_SIZE);
 }
 
 inline Decoder::~Decoder()
@@ -114,7 +112,6 @@ inline Decoder::~Decoder()
 	if (m_format_ctx) {
 		av_close_input_file(m_format_ctx);
 	}
-	av_free(m_buffer2);
 	av_free(m_buffer1);
 }
 
@@ -175,6 +172,11 @@ inline bool Decoder::Open()
 		return false;
 	}
 
+	if (SampleRate() <= 0) {
+		m_error = "Invalid sample rate.\n";
+		return false;
+	}
+
 	return true;
 }
 
@@ -198,7 +200,7 @@ inline void Decoder::Decode(FingerprintCalculator *consumer, int max_length)
 		packet_temp.data = packet.data;
 		packet_temp.size = packet.size;
 		while (packet_temp.size > 0) {
-			int buffer_size = BUFFER_SIZE * sizeof(int16_t);
+			int buffer_size = BUFFER_SIZE;
 			int consumed = avcodec_decode_audio2(
 				m_codec_ctx, (int16_t *)m_buffer1, &buffer_size,
 				packet_temp.data, packet_temp.size);

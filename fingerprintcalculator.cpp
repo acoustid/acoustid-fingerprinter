@@ -11,9 +11,9 @@ FingerprintCalculator::~FingerprintCalculator()
     chromaprint_free(m_context);
 }
 
-void FingerprintCalculator::start(int sampleRate, int numChannels)
+bool FingerprintCalculator::start(int sampleRate, int numChannels)
 {
-    chromaprint_start(m_context, sampleRate, numChannels);
+    return chromaprint_start(m_context, sampleRate, numChannels);
 }
 
 void FingerprintCalculator::feed(qint16 *data, int size)

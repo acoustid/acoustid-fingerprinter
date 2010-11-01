@@ -122,6 +122,9 @@ void Fingerprinter::onFileAnalyzed(AnalyzeResult *result)
 			maybeSubmit();
 		}
 	}
+	else {
+		qDebug() << "Error" << result->errorMessage << "while processing" << result->fileName;
+	}
 	if (isRunning()) {
 		fingerprintNextFile();
 	}

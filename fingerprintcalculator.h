@@ -10,7 +10,7 @@ public:
     FingerprintCalculator();
     ~FingerprintCalculator();
 
-    void start(int sampleRate, int numChannels);
+    bool start(int sampleRate, int numChannels);
     void feed(qint16 *data, int size);
     QString finish();
 
