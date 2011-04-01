@@ -111,8 +111,9 @@ bool MainWindow::validateFields(QString &apiKey, QList<QString> &directories)
 	if (apiKey.isEmpty()) {
 		QMessageBox::warning(this, tr("Error"),
 			tr("Please enter your Acoustid API key. You can get an API key "
-			"from the <a href=\"%1\">Acoustid website</a> without any "
-			"registration.").arg(API_KEY_URL));
+			"from the <a href=\"%1\">Acoustid website</a> after signing in "
+			"with your MusicBrainz account or any OpenID (Google, Yahoo, "
+			"etc.)").arg(API_KEY_URL));
 		return false;
 	}
 	directories = m_directoryModel->selectedDirectories();
