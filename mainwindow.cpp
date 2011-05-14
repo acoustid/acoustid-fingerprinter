@@ -28,7 +28,11 @@ void MainWindow::setupUi()
 
 	m_directoryModel = new CheckableDirModel();
 	m_directoryModel->setFilter(QDir::AllDirs | QDir::NoDotAndDotDot);
+#ifdef Q_WS_MAC
+	m_directoryModel->setRootPath("/Volumes");
+#else
 	m_directoryModel->setRootPath("");
+#endif
 
 	treeView->setModel(m_directoryModel);
 	treeView->setHeaderHidden(true);
