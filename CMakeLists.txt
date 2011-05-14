@@ -71,6 +71,10 @@ if(WIN32)
 set(GUI_TYPE WIN32)
 endif(WIN32)
 
+if(APPLE)
+set(GUI_TYPE MACOSX_BUNDLE)
+endif()
+
 add_executable(fpsubmit ${GUI_TYPE}
     ${fpsubmit_SOURCES}
     ${fpsubmit_MOC}
@@ -89,5 +93,9 @@ target_link_libraries(fpsubmit
 	${TAGLIB_LIBRARIES}
 	${CHROMAPRINT_LIBRARIES}
 )
+
+if(APPLE)
+	target_link_libraries(fpsubmit "-framework Accelerate -lz")
+endif()
 
 install(TARGETS fpsubmit DESTINATION ${BIN_INSTALL_DIR})
