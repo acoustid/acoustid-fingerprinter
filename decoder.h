@@ -65,6 +65,7 @@ private:
 	std::string m_error;
 	AVFormatContext *m_format_ctx;
 	AVCodecContext *m_codec_ctx;
+	bool m_codec_open;
 	AVStream *m_stream;
     static QMutex m_mutex;
 	//AVAudioConvert *m_convert_ctx;
@@ -97,7 +98,7 @@ inline void Decoder::initialize()
 }
 
 inline Decoder::Decoder(const std::string &file_name)
-	: m_file_name(file_name), m_format_ctx(0), m_codec_ctx(0), m_stream(0)
+	: m_file_name(file_name), m_format_ctx(0), m_codec_ctx(0), m_stream(0), m_codec_open(false)
 	/*, m_convert_ctx(0)*/
 {
 	m_buffer1 = (uint8_t *)av_malloc(BUFFER_SIZE);
@@ -105,7 +106,7 @@ inline Decoder::Decoder(const std::string &file_name)
 
 inline Decoder::~Decoder()
 {
-	if (m_codec_ctx) {
+	if (m_codec_ctx && m_codec_open) {
         QMutexLocker locker(&m_mutex); 
 		avcodec_close(m_codec_ctx);
 	}
@@ -158,6 +159,7 @@ inline bool Decoder::Open()
         m_error = "Couldn't open the codec.";
         return false;
     }
+	m_codec_open = true;
 
 	if (m_codec_ctx->sample_fmt != SAMPLE_FMT_S16) {
 		m_error = "Unsupported sample format.\n";
