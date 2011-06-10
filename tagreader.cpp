@@ -22,7 +22,7 @@
 QMutex TagReader::m_mutex;
 
 TagReader::TagReader(const QString &fileName)
-    : m_fileName(fileName)
+    : m_fileName(fileName), m_trackNo(0), m_discNo(0), m_year(0)
 {
 }
 
@@ -30,87 +30,122 @@ TagReader::~TagReader()
 {
 }
 
-#define DISPATCH_TAGLIB_FILE(type, file) \
+#define TAGLIB_STRING_TO_QSTRING(a) QString::fromStdWString((a).toWString())
+
+#define DISPATCH_TAGLIB_FILE(tr, type, file) \
 	{ \
 		type *tmp = dynamic_cast<type *>(file); \
 		if (tmp) { \
-			return extractMBIDFromFile(tmp); \
+			extractMetaFromFile(tr, tmp); \
+			return; \
 		} \
 	}
 
-QString extractMBIDFromXiphComment(TagLib::Ogg::XiphComment *tag)
+void extractMetaFromXiphComment(TagReader *tr, TagLib::Ogg::XiphComment *tag)
 {
 	const char *key = "MUSICBRAINZ_TRACKID"; 
 	if (tag->fieldListMap().contains(key)) {
-		return QString::fromUtf8(tag->fieldListMap()[key].front().toCString(true));
+		tr->m_mbid = TAGLIB_STRING_TO_QSTRING(tag->fieldListMap()[key].front());
 	}
-	return QString();
+	key = "ALBUMARTIST"; 
+	if (tag->fieldListMap().contains(key)) {
+		tr->m_albumArtist = TAGLIB_STRING_TO_QSTRING(tag->fieldListMap()[key].front());
+	}
+	key = "DISCNUMBER"; 
+	if (tag->fieldListMap().contains(key)) {
+		tr->m_discNo = tag->fieldListMap()[key].front().toInt();
+	}
 }
 
-QString extractMBIDFromAPETag(TagLib::APE::Tag *tag)
+void extractMetaFromAPETag(TagReader *tr, TagLib::APE::Tag *tag)
 {
 	const char *key = "MUSICBRAINZ_TRACKID";
 	if (tag->itemListMap().contains(key)) {
-		return QString::fromUtf8(tag->itemListMap()[key].toString().toCString(true));
+		tr->m_mbid = TAGLIB_STRING_TO_QSTRING(tag->itemListMap()[key].toString());
 	}
-	return QString();
+	key = "ALBUM ARTIST"; // Foobar
+	if (tag->itemListMap().contains(key)) {
+		tr->m_albumArtist = TAGLIB_STRING_TO_QSTRING(tag->itemListMap()[key].toString());
+	}
+	key = "ALBUMARTIST"; // Picard
+	if (tag->itemListMap().contains(key)) {
+		tr->m_albumArtist = TAGLIB_STRING_TO_QSTRING(tag->itemListMap()[key].toString());
+	}
+	key = "DISC"; 
+	if (tag->itemListMap().contains(key)) {
+		tr->m_discNo = tag->itemListMap()[key].toString().toInt();
+	}
 }
 
-QString extractMBIDFromFile(TagLib::Ogg::Vorbis::File *file)
+void extractMetaFromFile(TagReader *tr, TagLib::Ogg::Vorbis::File *file)
 {
-	return extractMBIDFromXiphComment(file->tag());
+	extractMetaFromXiphComment(tr, file->tag());
 }
 
-QString extractMBIDFromFile(TagLib::Ogg::FLAC::File *file)
+void extractMetaFromFile(TagReader *tr, TagLib::Ogg::FLAC::File *file)
 {
-	return extractMBIDFromXiphComment(file->tag());
+	extractMetaFromXiphComment(tr, file->tag());
 }
 
-QString extractMBIDFromFile(TagLib::Ogg::Speex::File *file)
+void extractMetaFromFile(TagReader *tr, TagLib::Ogg::Speex::File *file)
 {
-	return extractMBIDFromXiphComment(file->tag());
+	extractMetaFromXiphComment(tr, file->tag());
 }
 
-QString extractMBIDFromFile(TagLib::FLAC::File *file)
+void extractMetaFromFile(TagReader *tr, TagLib::FLAC::File *file)
 {
-	return extractMBIDFromXiphComment(file->xiphComment());
+	extractMetaFromXiphComment(tr, file->xiphComment());
 }
 
-QString extractMBIDFromFile(TagLib::MPC::File *file)
+void extractMetaFromFile(TagReader *tr, TagLib::MPC::File *file)
 {
-	return extractMBIDFromAPETag(file->APETag());
+	extractMetaFromAPETag(tr, file->APETag());
 }
 
-QString extractMBIDFromFile(TagLib::WavPack::File *file)
+void extractMetaFromFile(TagReader *tr, TagLib::WavPack::File *file)
 {
-	return extractMBIDFromAPETag(file->APETag());
+	extractMetaFromAPETag(tr, file->APETag());
 }
 
 #ifdef TAGLIB_WITH_ASF
-QString extractMBIDFromFile(TagLib::ASF::File *file)
+void extractMetaFromFile(TagReader *tr, TagLib::ASF::File *file)
 {
 	const char *key = "MusicBrainz/Track Id";
 	TagLib::ASF::Tag *tag = file->tag();
 	if (tag->attributeListMap().contains(key)) {
-		return QString::fromUtf8(tag->attributeListMap()[key].front().toString().toCString(true));
+		tr->m_mbid = TAGLIB_STRING_TO_QSTRING(tag->attributeListMap()[key].front().toString());
 	}
-	return QString();
+	key = "WM/AlbumArtist";
+	if (tag->attributeListMap().contains(key)) {
+		tr->m_albumArtist = TAGLIB_STRING_TO_QSTRING(tag->attributeListMap()[key].front().toString());
+	}
+	key = "WM/PartOfSet";
+	if (tag->attributeListMap().contains(key)) {
+		tr->m_discNo = tag->attributeListMap()[key].front().toString().toInt();
+	}
 }
 #endif
 
 #ifdef TAGLIB_WITH_MP4
-QString extractMBIDFromFile(TagLib::MP4::File *file)
+void extractMetaFromFile(TagReader *tr, TagLib::MP4::File *file)
 {
 	const char *key = "----:com.apple.iTunes:MusicBrainz Track Id";
 	TagLib::MP4::Tag *tag = file->tag();
 	if (tag->itemListMap().contains(key)) {
-		return QString::fromUtf8(tag->itemListMap()[key].toStringList().toString().toCString(true));
+		tr->m_mbid = TAGLIB_STRING_TO_QSTRING(tag->itemListMap()[key].toStringList().toString());
 	}
-	return QString();
+	key = "aART";
+	if (tag->itemListMap().contains(key)) {
+		tr->m_albumArtist = TAGLIB_STRING_TO_QSTRING(tag->itemListMap()[key].toStringList().toString());
+	}
+	key = "disk";
+	if (tag->itemListMap().contains(key)) {
+		tr->m_discNo = tag->itemListMap()[key].toIntPair().first;
+	}
 }
 #endif
 
-QString extractMBIDFromFile(TagLib::MPEG::File *file)
+void extractMetaFromFile(TagReader *tr, TagLib::MPEG::File *file)
 {
 	TagLib::ID3v2::Tag *tag = file->ID3v2Tag();
 	TagLib::ID3v2::FrameList ufid = tag->frameListMap()["UFID"];
@@ -119,29 +154,35 @@ QString extractMBIDFromFile(TagLib::MPEG::File *file)
 			TagLib::ID3v2::UniqueFileIdentifierFrame *frame = dynamic_cast<TagLib::ID3v2::UniqueFileIdentifierFrame *>(*i);
 			if (frame && frame->owner() == "http://musicbrainz.org") {
 				TagLib::ByteVector id = frame->identifier();
-				return QString::fromAscii(id.data(), id.size());
+				tr->m_mbid = QString::fromAscii(id.data(), id.size());
 			}
 		}
 	}
-	return QString();
+	TagLib::ID3v2::FrameList tpe2 = tag->frameListMap()["TPE2"];
+	if (!tpe2.isEmpty()) {
+		tr->m_albumArtist = TAGLIB_STRING_TO_QSTRING(tpe2.front()->toString());
+	}
+	TagLib::ID3v2::FrameList tpos = tag->frameListMap()["TPOS"];
+	if (!tpos.isEmpty()) {
+		tr->m_albumArtist = tpe2.front()->toString().toInt();
+	}
 }
 
-QString extractMusicBrainzTrackID(TagLib::File *file)
+void extractMeta(TagReader *tr, TagLib::File *file)
 {
-	DISPATCH_TAGLIB_FILE(TagLib::FLAC::File, file);
-	DISPATCH_TAGLIB_FILE(TagLib::Ogg::Vorbis::File, file);
-	DISPATCH_TAGLIB_FILE(TagLib::Ogg::FLAC::File, file);
-	DISPATCH_TAGLIB_FILE(TagLib::Ogg::Speex::File, file);
-	DISPATCH_TAGLIB_FILE(TagLib::MPC::File, file);
-	DISPATCH_TAGLIB_FILE(TagLib::WavPack::File, file);
+	DISPATCH_TAGLIB_FILE(tr, TagLib::FLAC::File, file);
+	DISPATCH_TAGLIB_FILE(tr, TagLib::Ogg::Vorbis::File, file);
+	DISPATCH_TAGLIB_FILE(tr, TagLib::Ogg::FLAC::File, file);
+	DISPATCH_TAGLIB_FILE(tr, TagLib::Ogg::Speex::File, file);
+	DISPATCH_TAGLIB_FILE(tr, TagLib::MPC::File, file);
+	DISPATCH_TAGLIB_FILE(tr, TagLib::WavPack::File, file);
 #ifdef TAGLIB_WITH_ASF
-	DISPATCH_TAGLIB_FILE(TagLib::ASF::File, file);
+	DISPATCH_TAGLIB_FILE(tr, TagLib::ASF::File, file);
 #endif
 #ifdef TAGLIB_WITH_MP4
-	DISPATCH_TAGLIB_FILE(TagLib::MP4::File, file);
+	DISPATCH_TAGLIB_FILE(tr, TagLib::MP4::File, file);
 #endif
-	DISPATCH_TAGLIB_FILE(TagLib::MPEG::File, file);
-	return QString();
+	DISPATCH_TAGLIB_FILE(tr, TagLib::MPEG::File, file);
 }
 
 bool TagReader::read()
@@ -161,10 +202,16 @@ bool TagReader::read()
         return false;
     }
 
+	m_artist = TAGLIB_STRING_TO_QSTRING(tags->artist());
+	m_album = TAGLIB_STRING_TO_QSTRING(tags->album());
+	m_track = TAGLIB_STRING_TO_QSTRING(tags->title());
+	m_trackNo = tags->track();
+	m_year = tags->year();
+
 	m_length = props->length();
     m_bitrate = props->bitrate();
-	m_mbid = extractMusicBrainzTrackID(file.file());
-	if (!m_length || m_mbid.size() != 36) {
+	extractMeta(this, file.file());
+	if (!m_length) {
 		return false;
     }
 

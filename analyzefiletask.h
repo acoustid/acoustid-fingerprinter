@@ -14,6 +14,13 @@ struct AnalyzeResult
     QString fileName;
     QString mbid;
     QString fingerprint;
+	QString track;
+	QString artist;
+	QString album;
+	QString albumArtist;
+	int trackNo;
+	int discNo;
+	int year;
     int length;
     int bitrate;
     bool error;

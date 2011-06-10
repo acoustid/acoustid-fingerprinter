@@ -1,4 +1,5 @@
 #include <QDebug>
+#include <QFile>
 #include "decoder.h"
 #include "tagreader.h"
 #include "utils.h"
@@ -25,7 +26,22 @@ void AnalyzeFileTask::run()
         return;
     }
 
-    result->mbid = tags.mbid();
+	qDebug() << "Track:" << tags.track();
+	qDebug() << "Artist:" << tags.artist();
+	qDebug() << "Album:" << tags.album();
+	qDebug() << "AlbumArtist:" << tags.albumArtist();
+	qDebug() << "TrackNo:" << tags.trackNo();
+	qDebug() << "DiscNo:" << tags.discNo();
+	qDebug() << "Year:" << tags.year();
+
+	result->mbid = tags.mbid();
+	result->track = tags.track();
+	result->artist = tags.artist();
+	result->album = tags.album();
+	result->albumArtist = tags.albumArtist();
+	result->trackNo = tags.trackNo();
+	result->discNo = tags.discNo();
+	result->year = tags.year();
     result->length = tags.length();
     result->bitrate = tags.bitrate();
     if (result->length < 10) {
@@ -35,7 +51,15 @@ void AnalyzeFileTask::run()
         return;
     }
 
-    Decoder decoder(qPrintable(m_path));
+    if (result->mbid.isEmpty() && (result->track.isEmpty() || result->album.isEmpty() || result->artist.isEmpty())) {
+        result->error = true;
+        result->errorMessage = "Couldn't find any usable metadata";
+		emit finished(result);
+        return;
+    }
+
+    QByteArray encodedPath = QFile::encodeName(m_path);
+    Decoder decoder(encodedPath.data());
     if (!decoder.Open()) {
         result->error = true;
         result->errorMessage = QString("Couldn't open the file: ") + QString::fromStdString(decoder.LastError());
