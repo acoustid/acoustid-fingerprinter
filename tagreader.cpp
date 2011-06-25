@@ -164,7 +164,7 @@ void extractMetaFromFile(TagReader *tr, TagLib::MPEG::File *file)
 	}
 	TagLib::ID3v2::FrameList tpos = tag->frameListMap()["TPOS"];
 	if (!tpos.isEmpty()) {
-		tr->m_albumArtist = tpe2.front()->toString().toInt();
+		tr->m_discNo = tpos.front()->toString().toInt();
 	}
 }
 

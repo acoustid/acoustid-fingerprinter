@@ -149,11 +149,14 @@ bool Fingerprinter::maybeSubmit(bool force)
 		for (int i = 0; i < size; i++) {
 			AnalyzeResult *result = m_submitQueue.takeFirst();
 			qDebug() << "  " << result->mbid;
-			url.addQueryItem(QString("length.%1").arg(i), QString::number(result->length));
+			url.addQueryItem(QString("duration.%1").arg(i), QString::number(result->length));
 			if (!result->mbid.isEmpty()) {
 				url.addQueryItem(QString("mbid.%1").arg(i), result->mbid);
 			}
 			else {
+				if (!result->track.isEmpty()) {
+					url.addQueryItem(QString("track.%1").arg(i), result->track);
+				}
 				if (!result->artist.isEmpty()) {
 					url.addQueryItem(QString("artist.%1").arg(i), result->artist);
 				}
