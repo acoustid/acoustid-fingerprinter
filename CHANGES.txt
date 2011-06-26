@@ -1,3 +1,9 @@
+Version 0.2 (2011-06-26)
+========================
+
+- Support for submitting fingerprints without MBIDs
+- Make it possible to access external discs using the browser on OS X
+
 Version 0.1 (2010-10-30)
 ========================
 

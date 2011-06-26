@@ -6,7 +6,7 @@
 
 inline QString userAgentString()
 {
-	return QString("fpsubmit/%1 Qt/%2").arg(VERSION).arg(qVersion());
+	return QString("AcoustidFingerprinter/%1 Qt/%2").arg(VERSION).arg(qVersion());
 }
 
 inline QString cacheFileName()
