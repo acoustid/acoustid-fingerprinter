@@ -49,6 +49,7 @@ void LoadFileListTask::processFile(const QString &path)
 
 	if (allowedExtensions.contains(extractExtension(path))) {
 		if (!m_cache.contains(path)) {
+			m_cache.insert(path);
 			m_files.append(path);
 		}
 	}
