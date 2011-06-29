@@ -16,6 +16,7 @@
 #endif
 #include <mpegfile.h>
 #include <id3v2tag.h>
+#include <textidentificationframe.h>
 #include <uniquefileidentifierframe.h>
 #include "tagreader.h"
 
@@ -181,6 +182,10 @@ void extractMetaFromFile(TagReader *tr, TagLib::MPEG::File *file)
 	TagLib::ID3v2::FrameList tpos = tag->frameListMap()["TPOS"];
 	if (!tpos.isEmpty()) {
 		tr->m_discNo = tpos.front()->toString().toInt();
+	}
+	TagLib::ID3v2::UserTextIdentificationFrame *puidFrame = TagLib::ID3v2::UserTextIdentificationFrame::find(tag, "MUSICIP_PUID");
+	if (puidFrame) {
+		tr->m_puid = TAGLIB_STRING_TO_QSTRING(puidFrame->toString());
 	}
 }
 
