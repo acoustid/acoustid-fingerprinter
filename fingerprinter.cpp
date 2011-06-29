@@ -30,8 +30,8 @@ void Fingerprinter::start()
 {
 	m_time.start();
 	LoadFileListTask *task = new LoadFileListTask(m_directories);
-	connect(task, SIGNAL(finished(const QStringList &)), SLOT(onFileListLoaded(const QStringList &)));
-	connect(task, SIGNAL(currentPathChanged(const QString &)), SIGNAL(currentPathChanged(const QString &)));
+	connect(task, SIGNAL(finished(const QStringList &)), SLOT(onFileListLoaded(const QStringList &)), Qt::QueuedConnection);
+	connect(task, SIGNAL(currentPathChanged(const QString &)), SIGNAL(currentPathChanged(const QString &)), Qt::QueuedConnection);
 	task->setAutoDelete(true);
 	emit fileListLoadingStarted();
 	QThreadPool::globalInstance()->start(task);
@@ -105,7 +105,7 @@ void Fingerprinter::fingerprintNextFile()
 	QString path = m_files.takeFirst();
 	emit currentPathChanged(path);
 	AnalyzeFileTask *task = new AnalyzeFileTask(path);
-	connect(task, SIGNAL(finished(AnalyzeResult *)), SLOT(onFileAnalyzed(AnalyzeResult *)));
+	connect(task, SIGNAL(finished(AnalyzeResult *)), SLOT(onFileAnalyzed(AnalyzeResult *)), Qt::QueuedConnection);
 	task->setAutoDelete(true);
 	QThreadPool::globalInstance()->start(task);
 }
