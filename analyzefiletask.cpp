@@ -39,6 +39,7 @@ void AnalyzeFileTask::run()
 	result->artist = tags.artist();
 	result->album = tags.album();
 	result->albumArtist = tags.albumArtist();
+	result->puid = tags.puid();
 	result->trackNo = tags.trackNo();
 	result->discNo = tags.discNo();
 	result->year = tags.year();

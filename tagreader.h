@@ -51,6 +51,7 @@ public:
 	QString artist() const { return m_artist; }
 	QString album() const { return m_album; }
 	QString albumArtist() const { return m_albumArtist; }
+	QString puid() const { return m_puid; }
 	int trackNo() const { return m_trackNo; }
 	int discNo() const { return m_discNo; }
 	int year() const { return m_year; }
@@ -62,6 +63,7 @@ public:
     QString m_album;
     QString m_albumArtist;
     QString m_mbid;
+    QString m_puid;
 	int m_trackNo;
 	int m_discNo;
 	int m_year;

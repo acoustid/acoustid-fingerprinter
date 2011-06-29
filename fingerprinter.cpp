@@ -154,6 +154,9 @@ bool Fingerprinter::maybeSubmit(bool force)
 				url.addQueryItem(QString("mbid.%1").arg(i), result->mbid);
 			}
 			else {
+				if (!result->puid.isEmpty()) {
+					url.addQueryItem(QString("puid.%1").arg(i), result->puid);
+				}
 				if (!result->track.isEmpty()) {
 					url.addQueryItem(QString("track.%1").arg(i), result->track);
 				}
