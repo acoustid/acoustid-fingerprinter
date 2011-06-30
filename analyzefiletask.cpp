@@ -33,12 +33,14 @@ void AnalyzeFileTask::run()
 	qDebug() << "TrackNo:" << tags.trackNo();
 	qDebug() << "DiscNo:" << tags.discNo();
 	qDebug() << "Year:" << tags.year();
+	qDebug() << "PUID:" << tags.puid();
 
 	result->mbid = tags.mbid();
 	result->track = tags.track();
 	result->artist = tags.artist();
 	result->album = tags.album();
 	result->albumArtist = tags.albumArtist();
+	result->puid = tags.puid();
 	result->trackNo = tags.trackNo();
 	result->discNo = tags.discNo();
 	result->year = tags.year();

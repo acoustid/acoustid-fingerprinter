@@ -18,6 +18,7 @@ struct AnalyzeResult
 	QString artist;
 	QString album;
 	QString albumArtist;
+	QString puid;
 	int trackNo;
 	int discNo;
 	int year;

@@ -16,6 +16,7 @@
 #endif
 #include <mpegfile.h>
 #include <id3v2tag.h>
+#include <textidentificationframe.h>
 #include <uniquefileidentifierframe.h>
 #include "tagreader.h"
 
@@ -55,6 +56,10 @@ void extractMetaFromXiphComment(TagReader *tr, TagLib::Ogg::XiphComment *tag)
 	if (tag->fieldListMap().contains(key)) {
 		tr->m_discNo = tag->fieldListMap()[key].front().toInt();
 	}
+	key = "MUSICIP_PUID";
+	if (tag->fieldListMap().contains(key)) {
+		tr->m_puid = TAGLIB_STRING_TO_QSTRING(tag->fieldListMap()[key].front());
+	}
 }
 
 void extractMetaFromAPETag(TagReader *tr, TagLib::APE::Tag *tag)
@@ -74,6 +79,10 @@ void extractMetaFromAPETag(TagReader *tr, TagLib::APE::Tag *tag)
 	key = "DISC"; 
 	if (tag->itemListMap().contains(key)) {
 		tr->m_discNo = tag->itemListMap()[key].toString().toInt();
+	}
+	key = "MUSICIP_PUID";
+	if (tag->itemListMap().contains(key)) {
+		tr->m_puid = TAGLIB_STRING_TO_QSTRING(tag->itemListMap()[key].toString());
 	}
 }
 
@@ -123,6 +132,10 @@ void extractMetaFromFile(TagReader *tr, TagLib::ASF::File *file)
 	if (tag->attributeListMap().contains(key)) {
 		tr->m_discNo = tag->attributeListMap()[key].front().toString().toInt();
 	}
+	key = "MusicIP/PUID";
+	if (tag->attributeListMap().contains(key)) {
+		tr->m_puid = TAGLIB_STRING_TO_QSTRING(tag->attributeListMap()[key].front().toString());
+	}
 }
 #endif
 
@@ -141,6 +154,10 @@ void extractMetaFromFile(TagReader *tr, TagLib::MP4::File *file)
 	key = "disk";
 	if (tag->itemListMap().contains(key)) {
 		tr->m_discNo = tag->itemListMap()[key].toIntPair().first;
+	}
+	key = "----:com.apple.iTunes:MusicIP PUID";
+	if (tag->itemListMap().contains(key)) {
+		tr->m_puid = TAGLIB_STRING_TO_QSTRING(tag->itemListMap()[key].toStringList().toString());
 	}
 }
 #endif
@@ -165,6 +182,13 @@ void extractMetaFromFile(TagReader *tr, TagLib::MPEG::File *file)
 	TagLib::ID3v2::FrameList tpos = tag->frameListMap()["TPOS"];
 	if (!tpos.isEmpty()) {
 		tr->m_discNo = tpos.front()->toString().toInt();
+	}
+	TagLib::ID3v2::UserTextIdentificationFrame *puidFrame = TagLib::ID3v2::UserTextIdentificationFrame::find(tag, "MusicIP PUID");
+	if (puidFrame) {
+		TagLib::StringList texts = puidFrame->fieldList();
+		if (texts.size() > 1) {
+			tr->m_puid = TAGLIB_STRING_TO_QSTRING(texts[1]);
+		}
 	}
 }
 
