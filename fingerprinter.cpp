@@ -179,7 +179,7 @@ bool Fingerprinter::maybeSubmit(bool force)
 			url.addQueryItem(QString("fingerprint.%1").arg(i), result->fingerprint);
 			QString format = extractExtension(result->fileName);
 			if (!format.isEmpty()) {
-				url.addQueryItem(QString("format.%1").arg(i), format);
+				url.addQueryItem(QString("fileformat.%1").arg(i), format);
 			}
 			if (result->bitrate) {
 				url.addQueryItem(QString("bitrate.%1").arg(i), QString::number(result->bitrate));
