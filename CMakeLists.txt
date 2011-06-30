@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 
 project(fpsubmit)
-set(fpsubmit_VERSION 0.2)
+set(fpsubmit_VERSION 0.3)
 
 set(LIB_SUFFIX "" CACHE STRING "Define suffix of directory name (32/64)")
 set(EXEC_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX} CACHE PATH "Installation prefix for executables and object code libraries" FORCE)
