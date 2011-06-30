@@ -183,9 +183,12 @@ void extractMetaFromFile(TagReader *tr, TagLib::MPEG::File *file)
 	if (!tpos.isEmpty()) {
 		tr->m_discNo = tpos.front()->toString().toInt();
 	}
-	TagLib::ID3v2::UserTextIdentificationFrame *puidFrame = TagLib::ID3v2::UserTextIdentificationFrame::find(tag, "MUSICIP_PUID");
+	TagLib::ID3v2::UserTextIdentificationFrame *puidFrame = TagLib::ID3v2::UserTextIdentificationFrame::find(tag, "MusicIP PUID");
 	if (puidFrame) {
-		tr->m_puid = TAGLIB_STRING_TO_QSTRING(puidFrame->toString());
+		TagLib::StringList texts = puidFrame->fieldList();
+		if (texts.size() > 1) {
+			tr->m_puid = TAGLIB_STRING_TO_QSTRING(texts[1]);
+		}
 	}
 }
 

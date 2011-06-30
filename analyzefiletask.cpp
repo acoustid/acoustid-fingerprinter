@@ -33,6 +33,7 @@ void AnalyzeFileTask::run()
 	qDebug() << "TrackNo:" << tags.trackNo();
 	qDebug() << "DiscNo:" << tags.discNo();
 	qDebug() << "Year:" << tags.year();
+	qDebug() << "PUID:" << tags.puid();
 
 	result->mbid = tags.mbid();
 	result->track = tags.track();
