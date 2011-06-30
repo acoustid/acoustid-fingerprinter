@@ -134,7 +134,7 @@ inline bool Decoder::Open()
 
 	for (int i = 0; i < m_format_ctx->nb_streams; i++) {
 		AVCodecContext *avctx = m_format_ctx->streams[i]->codec;
-#if LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(52, 20, 0)
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(52, 64, 0)
                 if (avctx && avctx->codec_type == CODEC_TYPE_AUDIO) {
 #else
                 if (avctx && avctx->codec_type == AVMEDIA_TYPE_AUDIO) {
@@ -207,7 +207,7 @@ inline void Decoder::Decode(FingerprintCalculator *consumer, int max_length)
 		packet_temp.size = packet.size;
 		while (packet_temp.size > 0) {
 			int buffer_size = BUFFER_SIZE;
-#if LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(52, 20, 0)
+#if LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(52, 25, 0)
                         int consumed = avcodec_decode_audio2(
                                 m_codec_ctx, (int16_t *)m_buffer1, &buffer_size,
                                 packet_temp.data, packet_temp.size);
