@@ -3,9 +3,11 @@
 #include <QUrl>
 #include <QNetworkReply>
 #include <QNetworkRequest>
-#include <QtConcurrentRun>
+#include <QNetworkProxy>
+#include <QNetworkProxyFactory>
 #include <QDesktopServices>
 #include <QMutexLocker>
+#include <QThreadPool>
 #include "loadfilelisttask.h"
 #include "analyzefiletask.h"
 #include "updatelogfiletask.h"
@@ -14,11 +16,54 @@
 #include "utils.h"
 #include "gzip.h"
 
+class NetworkProxyFactory : public QNetworkProxyFactory
+{
+public:
+	NetworkProxyFactory() : m_httpProxy(QNetworkProxy::NoProxy)
+	{
+		char* httpProxyUrl = getenv("http_proxy");
+		if (httpProxyUrl) {
+			QUrl url = QUrl::fromEncoded(QByteArray(httpProxyUrl));
+			if (url.isValid() && !url.host().isEmpty()) {
+				m_httpProxy = QNetworkProxy(QNetworkProxy::HttpProxy, url.host(), url.port(80));
+				if (!url.userName().isEmpty())	{
+					m_httpProxy.setUser(url.userName());
+					if (!url.password().isEmpty()) {
+						m_httpProxy.setPassword(url.password());
+					}
+				}
+			}
+		}
+	}
+
+	QList<QNetworkProxy> queryProxy(const QNetworkProxyQuery& query)
+	{
+		QList<QNetworkProxy> proxies = QNetworkProxyFactory::systemProxyForQuery(query);
+		QString protocol = query.protocolTag().toLower();
+		if (m_httpProxy.type() != QNetworkProxy::NoProxy && protocol == QLatin1String("http")) {
+			QMutableListIterator<QNetworkProxy> i(proxies);
+			while (i.hasNext()) {
+				QNetworkProxy& proxy = i.next();
+				if (proxy.type() == QNetworkProxy::NoProxy) {
+					i.remove();
+				}
+			}
+			proxies.append(m_httpProxy);
+			proxies.append(QNetworkProxy::NoProxy);
+		}
+		return proxies;
+	}
+
+private:
+	QNetworkProxy m_httpProxy;
+};
+
 Fingerprinter::Fingerprinter(const QString &apiKey, const QStringList &directories)
     : m_apiKey(apiKey), m_directories(directories), m_paused(false), m_cancelled(false),
 	  m_finished(false), m_reply(0), m_activeFiles(0), m_fingerprintedFiles(0), m_submittedFiles(0)
 {
 	m_networkAccessManager = new QNetworkAccessManager(this);
+	m_networkAccessManager->setProxyFactory(new NetworkProxyFactory());
 	connect(m_networkAccessManager, SIGNAL(finished(QNetworkReply *)), SLOT(onRequestFinished(QNetworkReply*)));
 }
 
