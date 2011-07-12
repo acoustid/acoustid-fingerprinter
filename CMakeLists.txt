@@ -11,7 +11,7 @@ set(INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include CACHE PATH "Installation
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
 
-find_package(Qt4 COMPONENTS QtCore QtGui QtNetwork QtConcurrent REQUIRED)
+find_package(Qt4 COMPONENTS QtCore QtGui QtNetwork REQUIRED)
 find_package(FFmpeg REQUIRED)
 find_package(Taglib REQUIRED)
 find_package(Chromaprint REQUIRED)
