@@ -195,13 +195,13 @@ bool Fingerprinter::maybeSubmit(bool force)
 			AnalyzeResult *result = m_submitQueue.takeFirst();
 			qDebug() << "  " << result->mbid;
 			url.addQueryItem(QString("duration.%1").arg(i), QString::number(result->length));
+			if (!result->puid.isEmpty()) {
+				url.addQueryItem(QString("puid.%1").arg(i), result->puid);
+			}
 			if (!result->mbid.isEmpty()) {
 				url.addQueryItem(QString("mbid.%1").arg(i), result->mbid);
 			}
 			else {
-				if (!result->puid.isEmpty()) {
-					url.addQueryItem(QString("puid.%1").arg(i), result->puid);
-				}
 				if (!result->track.isEmpty()) {
 					url.addQueryItem(QString("track.%1").arg(i), result->track);
 				}
