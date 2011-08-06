@@ -76,7 +76,12 @@ set(GUI_TYPE WIN32)
 endif(WIN32)
 
 if(APPLE)
-set(GUI_TYPE MACOSX_BUNDLE)
+    set(GUI_TYPE MACOSX_BUNDLE)
+    set(fpsubmit_ICON_FILE ${CMAKE_CURRENT_SOURCE_DIR}/images/acoustid-fp.icns)
+    set_source_files_properties(${fpsubmit_ICON_FILE}
+        PROPERTIES
+        MACOSX_PACKAGE_LOCATION Resources)
+	set(fpsubmit_SOURCES ${fpsubmit_SOURCES} ${fpsubmit_ICON_FILE})
 endif()
 
 add_executable(fpsubmit ${GUI_TYPE}
@@ -87,7 +92,11 @@ add_executable(fpsubmit ${GUI_TYPE}
 )
 
 set_target_properties(fpsubmit PROPERTIES
-	OUTPUT_NAME acoustid-fingerprinter)
+	OUTPUT_NAME acoustid-fingerprinter
+    MACOSX_BUNDLE_ICON_FILE acoustid-fp.icns
+	MACOSX_BUNDLE_INFO_STRING "Acoustid Fingerprinter ${fpsubmit_VERSION}"
+	MACOSX_BUNDLE_BUNDLE_NAME "Acoustid Fingerprinter"
+)
 
 target_link_libraries(fpsubmit
 	${QT_LIBRARIES}
