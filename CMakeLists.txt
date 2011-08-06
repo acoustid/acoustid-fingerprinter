@@ -46,11 +46,15 @@ set(fpsubmit_SOURCES
 	gzip.cpp
 )
 #set(fpsubmit_UIS fpsubmit.ui)
-#set(fpsubmit_RESOURCES fpsubmit.qrc)
+set(fpsubmit_RESOURCES fingerprinter.qrc)
 
 qt4_wrap_cpp(fpsubmit_MOC ${fpsubmit_HEADERS})
 qt4_wrap_ui(fpsubmit_UIS_H ${fpsubmit_UIS})
 qt4_add_resources(fpsubmit_RESOURCES_CPP ${fpsubmit_RESOURCES})
+
+if(WIN32)
+	set(fpsubmit_SOURCES ${fpsubmit_SOURCES} fingerprinter.rc)
+endif()
 
 add_definitions(
 	-D__STDC_LIMIT_MACROS

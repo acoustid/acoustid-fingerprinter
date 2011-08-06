@@ -85,6 +85,12 @@ void MainWindow::setupUi()
 	centralWidget->setLayout(mainLayout);
 	setCentralWidget(centralWidget);
 	setWindowTitle(tr("Acoustid Fingerprinter"));
+	QIcon icon;
+	icon.addFile(":/images/acoustid-fp-16.png", QSize(16, 16));
+	icon.addFile(":/images/acoustid-fp-24.png", QSize(24, 24));
+	icon.addFile(":/images/acoustid-fp-32.png", QSize(32, 32));
+	icon.addFile(":/images/acoustid-fp-48.png", QSize(48, 48));
+	setWindowIcon(icon);
 	resize(QSize(400, 500));
 }
 
