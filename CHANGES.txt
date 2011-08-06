@@ -1,3 +1,11 @@
+Version 0.4 (2011-08-06)
+========================
+
+- New icon
+- HTTP proxy support using the $http_proxy environment variable
+- When available, PUIDs are always submitted
+- Fixed submission of the file format
+
 Version 0.3 (2011-06-30)
 ========================
 
