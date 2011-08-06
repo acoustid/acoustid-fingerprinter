@@ -201,28 +201,26 @@ bool Fingerprinter::maybeSubmit(bool force)
 			if (!result->mbid.isEmpty()) {
 				url.addQueryItem(QString("mbid.%1").arg(i), result->mbid);
 			}
-			else {
-				if (!result->track.isEmpty()) {
-					url.addQueryItem(QString("track.%1").arg(i), result->track);
-				}
-				if (!result->artist.isEmpty()) {
-					url.addQueryItem(QString("artist.%1").arg(i), result->artist);
-				}
-				if (!result->album.isEmpty()) {
-					url.addQueryItem(QString("album.%1").arg(i), result->album);
-				}
-				if (!result->albumArtist.isEmpty()) {
-					url.addQueryItem(QString("albumartist.%1").arg(i), result->albumArtist);
-				}
-				if (result->year) {
-					url.addQueryItem(QString("year.%1").arg(i), QString::number(result->year));
-				}
-				if (result->trackNo) {
-					url.addQueryItem(QString("trackno.%1").arg(i), QString::number(result->trackNo));
-				}
-				if (result->discNo) {
-					url.addQueryItem(QString("discno.%1").arg(i), QString::number(result->discNo));
-				}
+			if (!result->track.isEmpty()) {
+				url.addQueryItem(QString("track.%1").arg(i), result->track);
+			}
+			if (!result->artist.isEmpty()) {
+				url.addQueryItem(QString("artist.%1").arg(i), result->artist);
+			}
+			if (!result->album.isEmpty()) {
+				url.addQueryItem(QString("album.%1").arg(i), result->album);
+			}
+			if (!result->albumArtist.isEmpty()) {
+				url.addQueryItem(QString("albumartist.%1").arg(i), result->albumArtist);
+			}
+			if (result->year) {
+				url.addQueryItem(QString("year.%1").arg(i), QString::number(result->year));
+			}
+			if (result->trackNo) {
+				url.addQueryItem(QString("trackno.%1").arg(i), QString::number(result->trackNo));
+			}
+			if (result->discNo) {
+				url.addQueryItem(QString("discno.%1").arg(i), QString::number(result->discNo));
 			}
 			url.addQueryItem(QString("fingerprint.%1").arg(i), result->fingerprint);
 			QString format = extractExtension(result->fileName);
