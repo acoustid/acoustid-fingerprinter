@@ -1,0 +1,8 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+    <file>images/acoustid-fp-16.png</file>
+    <file>images/acoustid-fp-24.png</file>
+    <file>images/acoustid-fp-32.png</file>
+    <file>images/acoustid-fp-48.png</file>
+</qresource>
+</RCC>
