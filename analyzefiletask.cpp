@@ -53,7 +53,7 @@ void AnalyzeFileTask::run()
         return;
     }
 
-    if (result->mbid.isEmpty() && (result->track.isEmpty() || result->album.isEmpty() || result->artist.isEmpty())) {
+    if (result->mbid.isEmpty() && result->puid.isEmpty() && (result->track.isEmpty() || result->album.isEmpty() || result->artist.isEmpty())) {
         result->error = true;
         result->errorMessage = "Couldn't find any usable metadata";
 		emit finished(result);
