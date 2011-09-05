@@ -214,8 +214,12 @@ bool TagReader::read()
     // TagLib functions are not reentrant
     QMutexLocker locker(&m_mutex);
 
+#ifdef Q_OS_WIN32
+    TagLib::FileRef file(static_cast<const wchar_t *>(m_fileName.data()), true);
+#else
     QByteArray encodedFileName = QFile::encodeName(m_fileName);
 	TagLib::FileRef file(encodedFileName.constData(), true);
+#endif
 	if (file.isNull()) {
 		return false;
     }
