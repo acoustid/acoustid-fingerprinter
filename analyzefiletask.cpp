@@ -60,7 +60,11 @@ void AnalyzeFileTask::run()
         return;
     }
 
+#ifdef Q_OS_WIN32
+    QByteArray encodedPath = m_path.toUtf8();
+#else
     QByteArray encodedPath = QFile::encodeName(m_path);
+#endif
     Decoder decoder(encodedPath.data());
     if (!decoder.Open()) {
         result->error = true;
