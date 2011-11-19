@@ -1,0 +1,14 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=acoustid-fingerprinter
+Exec=acoustid-fingerprinter
+Icon=acoustid-fingerprinter
+GenericName=AcoustID Music fingerprinting tool
+
+Terminal=false
+Type=Application
+Categories=AudioVideo;Audio;Qt;AudioVideoEditing;
+MimeType=audio/x-mp3;application/ogg;
+X-AppInstall-Package=acoustid-fingerprinter
+X-Desktop-File-Install-Version=0.18
+

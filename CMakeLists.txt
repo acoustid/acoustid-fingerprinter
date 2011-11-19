@@ -111,4 +111,8 @@ if(APPLE)
 	target_link_libraries(fpsubmit "-framework Accelerate -lz")
 endif()
 
+if(UNIX)
+	install(FILES acoustid-fingerprinter.desktop DESTINATION share/applications)
+endif()
+
 install(TARGETS fpsubmit DESTINATION ${BIN_INSTALL_DIR})
