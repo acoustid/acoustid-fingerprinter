@@ -28,6 +28,10 @@
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
+#ifdef HAVE_AV_AUDIO_CONVERT
+#include "ffmpeg/audioconvert.h"
+#include "ffmpeg/samplefmt.h"
+#endif
 }
 #include "fingerprintcalculator.h"
 
@@ -61,6 +65,7 @@ public:
 private:
 	static const int BUFFER_SIZE = AVCODEC_MAX_AUDIO_FRAME_SIZE * 2;
 	uint8_t *m_buffer1;
+	uint8_t *m_buffer2;
 	std::string m_file_name;
 	std::string m_error;
 	AVFormatContext *m_format_ctx;
@@ -68,7 +73,9 @@ private:
 	bool m_codec_open;
 	AVStream *m_stream;
     static QMutex m_mutex;
-	//AVAudioConvert *m_convert_ctx;
+#ifdef HAVE_AV_AUDIO_CONVERT
+	AVAudioConvert *m_convert_ctx;
+#endif
 };
 
 /*inline static void Decoder::lock_manager(void **mutex, enum AVLockOp op)
@@ -99,9 +106,12 @@ inline void Decoder::initialize()
 
 inline Decoder::Decoder(const std::string &file_name)
 	: m_file_name(file_name), m_format_ctx(0), m_codec_ctx(0), m_stream(0), m_codec_open(false)
-	/*, m_convert_ctx(0)*/
+#ifdef HAVE_AV_AUDIO_CONVERT
+	, m_convert_ctx(0)
+#endif
 {
-	m_buffer1 = (uint8_t *)av_malloc(BUFFER_SIZE);
+	m_buffer1 = (uint8_t *)av_malloc(BUFFER_SIZE + 16);
+	m_buffer2 = (uint8_t *)av_malloc(BUFFER_SIZE + 16);
 }
 
 inline Decoder::~Decoder()
@@ -113,7 +123,13 @@ inline Decoder::~Decoder()
 	if (m_format_ctx) {
 		av_close_input_file(m_format_ctx);
 	}
+#ifdef HAVE_AV_AUDIO_CONVERT
+	if (m_convert_ctx) {
+		av_audio_convert_free(m_convert_ctx);
+	}
+#endif
 	av_free(m_buffer1);
+	av_free(m_buffer2);
 }
 
 inline bool Decoder::Open()
@@ -162,24 +178,26 @@ inline bool Decoder::Open()
 	m_codec_open = true;
 
 	if (m_codec_ctx->sample_fmt != SAMPLE_FMT_S16) {
-		m_error = "Unsupported sample format.\n";
+#ifdef HAVE_AV_AUDIO_CONVERT
+		m_convert_ctx = av_audio_convert_alloc(AV_SAMPLE_FMT_S16, m_codec_ctx->channels,
+		                                       (AVSampleFormat)m_codec_ctx->sample_fmt, m_codec_ctx->channels, NULL, 0);
+		if (!m_convert_ctx) {
+			m_error = "Couldn't create sample format converter.";
+			return false;
+		}
+#else
+		m_error = "Unsupported sample format.";
 		return false;
+#endif
 	}
-	/*m_convert_ctx = av_audio_convert_alloc(SAMPLE_FMT_S16, 1,
-	                                       m_codec_ctx->sample_fmt, 1,
-										   NULL, 0);
-	if (!m_convert_ctx) {
-		m_error = "Cannot create sample format converter.";
-		return false;
-	}*/
 
 	if (Channels() <= 0) {
-		m_error = "Invalid audio stream (no channels).\n";
+		m_error = "Invalid audio stream (no channels).";
 		return false;
 	}
 
 	if (SampleRate() <= 0) {
-		m_error = "Invalid sample rate.\n";
+		m_error = "Invalid sample rate.";
 		return false;
 	}
 
@@ -228,21 +246,28 @@ inline void Decoder::Decode(FingerprintCalculator *consumer, int max_length)
 				continue;
 			}
 
-			int length = buffer_size / 2;
-			int16_t *audio_buffer = (int16_t *)m_buffer1;
-
-			/*if (m_convert_ctx) {
+			int16_t *audio_buffer;
+#ifdef HAVE_AV_AUDIO_CONVERT
+			if (m_convert_ctx) {
 				const void *ibuf[6] = { m_buffer1 };
 				void *obuf[6] = { m_buffer2 };
 				int istride[6] = { av_get_bits_per_sample_format(m_codec_ctx->sample_fmt) / 8 };
 				int ostride[6] = { 2 };
+				int len = buffer_size / istride[0];
 				if (av_audio_convert(m_convert_ctx, obuf, ostride, ibuf, istride, len) < 0) {
 					break;
 				}
-				length = buffer_size / istride[0];
 				audio_buffer = (int16_t *)m_buffer2;
-			}*/
+				buffer_size = len * ostride[0];
+			}
+			else {
+				audio_buffer = (int16_t *)m_buffer1;
+			}
+#else
+			audio_buffer = (int16_t *)m_buffer1;
+#endif
 
+			int length = buffer_size / 2;
 			if (max_length) {
 				length = std::min(remaining, length);
 			}

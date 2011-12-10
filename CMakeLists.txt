@@ -71,6 +71,18 @@ include_directories(
 	${CHROMAPRINT_INCLUDE_DIR}
 )
 
+set(CMAKE_REQUIRED_LIBRARIES
+	${FFMPEG_LIBAVFORMAT_LIBRARIES}
+	${FFMPEG_LIBAVCODEC_LIBRARIES}
+	${FFMPEG_LIBAVUTIL_LIBRARIES}
+	${EXTRA_LIBS})
+include(CheckFunctionExists)
+check_function_exists(av_audio_convert HAVE_AV_AUDIO_CONVERT)
+
+if(HAVE_AV_AUDIO_CONVERT)
+	add_definitions(-DHAVE_AV_AUDIO_CONVERT)
+endif()
+
 if(WIN32)
 set(GUI_TYPE WIN32)
 endif(WIN32)
