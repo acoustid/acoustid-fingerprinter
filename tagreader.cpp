@@ -175,6 +175,16 @@ void extractMetaFromFile(TagReader *tr, TagLib::MPEG::File *file)
 			}
 		}
 	}
+	if (tr->m_mbid.isEmpty()) {
+		// foobar2k writes the tags like this
+		TagLib::ID3v2::UserTextIdentificationFrame *trackidFrame = TagLib::ID3v2::UserTextIdentificationFrame::find(tag, "MUSICBRAINZ_TRACKID");
+		if (trackidFrame) {
+			TagLib::StringList texts = trackidFrame->fieldList();
+			if (texts.size() > 1) {
+				tr->m_mbid = TAGLIB_STRING_TO_QSTRING(texts[1]);
+			}
+		}
+	}
 	TagLib::ID3v2::FrameList tpe2 = tag->frameListMap()["TPE2"];
 	if (!tpe2.isEmpty()) {
 		tr->m_albumArtist = TAGLIB_STRING_TO_QSTRING(tpe2.front()->toString());
