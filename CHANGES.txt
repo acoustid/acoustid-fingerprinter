@@ -1,7 +1,10 @@
-Version 0.5 (2011-10-15)
+Version 0.5 (2011-12-22)
 ========================
 
 - Unicode filename support on Windows
+- Support for 24-bit sample formats
+- Reading MBID tags from foobar2000-written MP3 files
+- Added .desktop file for Linux
 
 Version 0.4 (2011-08-06)
 ========================
