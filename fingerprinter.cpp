@@ -237,6 +237,7 @@ bool Fingerprinter::maybeSubmit(bool force)
 		}
 		qDebug() << url.encodedQuery();
 		QNetworkRequest request = QNetworkRequest(QUrl::fromEncoded(SUBMIT_URL));
+		request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
 		request.setRawHeader("Content-Encoding", "gzip");
 		request.setRawHeader("User-Agent", userAgentString().toAscii());
 		m_reply = m_networkAccessManager->post(request, gzipCompress(url.encodedQuery()));
