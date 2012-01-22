@@ -1,8 +1,8 @@
 [Desktop Entry]
-Name=acoustid-fingerprinter
+Name=Acoustid Fingerprinter
 Exec=acoustid-fingerprinter
 Icon=acoustid-fingerprinter
-GenericName=AcoustID Music fingerprinting tool
+GenericName=Acoustid Music fingerprinting tool
 
 Terminal=false
 Type=Application
