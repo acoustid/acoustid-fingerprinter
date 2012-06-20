@@ -2,6 +2,7 @@
 #define FPSUBMIT_FINGERPRINTCALCULATOR_H_
 
 #include <QString>
+#include <QMutex>
 #include <chromaprint.h>
 
 class FingerprintCalculator {
@@ -16,6 +17,7 @@ public:
 
 private:
     ChromaprintContext *m_context;    
+    static QMutex m_mutex;
 };
 
 #endif

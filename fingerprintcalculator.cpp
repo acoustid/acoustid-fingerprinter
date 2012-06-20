@@ -1,13 +1,17 @@
 #include <stdlib.h>
 #include "fingerprintcalculator.h"
 
+QMutex FingerprintCalculator::m_mutex;
+
 FingerprintCalculator::FingerprintCalculator()
 {
+    QMutexLocker locker(&m_mutex);
     m_context = chromaprint_new(CHROMAPRINT_ALGORITHM_DEFAULT);
 }
 
 FingerprintCalculator::~FingerprintCalculator()
 {
+    QMutexLocker locker(&m_mutex);
     chromaprint_free(m_context);
 }
 
