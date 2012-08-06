@@ -35,6 +35,10 @@ extern "C" {
 }
 #include "fingerprintcalculator.h"
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(52, 64, 0)
+#define AV_SAMPLE_FMT_S16 SAMPLE_FMT_S16
+#endif
+
 class Decoder
 {
 public:
@@ -121,7 +125,7 @@ inline Decoder::~Decoder()
 		avcodec_close(m_codec_ctx);
 	}
 	if (m_format_ctx) {
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(53, 2, 0)
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(53, 17, 0)
 		av_close_input_file(m_format_ctx);
 #else
 		avformat_close_input(&m_format_ctx);
@@ -149,7 +153,11 @@ inline bool Decoder::Open()
 		return false;
 	}
 
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(53, 6, 0)
 	if (av_find_stream_info(m_format_ctx) < 0) {
+#else
+	if (avformat_find_stream_info(m_format_ctx, NULL) < 0) {
+#endif
 		m_error = "Couldn't find stream information in the file.";
 		return false;
 	}
@@ -179,17 +187,17 @@ inline bool Decoder::Open()
 		return false;
 	}
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(53, 8, 0)
     if (avcodec_open(m_codec_ctx, codec) < 0) {
+#else
+	if (avcodec_open2(m_codec_ctx, codec, NULL) < 0) {
+#endif
         m_error = "Couldn't open the codec.";
         return false;
     }
 	m_codec_open = true;
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(52, 94, 1)
-	if (m_codec_ctx->sample_fmt != SAMPLE_FMT_S16) {
-#else
 	if (m_codec_ctx->sample_fmt != AV_SAMPLE_FMT_S16) {
-#endif
 #ifdef HAVE_AV_AUDIO_CONVERT
 		m_convert_ctx = av_audio_convert_alloc(AV_SAMPLE_FMT_S16, m_codec_ctx->channels,
 		                                       (AVSampleFormat)m_codec_ctx->sample_fmt, m_codec_ctx->channels, NULL, 0);
