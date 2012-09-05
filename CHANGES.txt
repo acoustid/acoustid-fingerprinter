@@ -1,3 +1,10 @@
+Version 0.6 (2012-09-05)
+==========================
+
+- Compatibility with the latest FFmpeg API
+- Changed name in the .desktop file
+- Fixed a thread-related crash when using Chromaprint compiled with FFTW3
+
 Version 0.5.1 (2012-01-08)
 ==========================
 
