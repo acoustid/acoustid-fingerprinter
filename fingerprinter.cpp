@@ -261,7 +261,7 @@ void Fingerprinter::onRequestFinished(QNetworkReply *reply)
 			stop = true;
 		}
 		else {
-			qWarning() << "Submittion failed:" << errorMessage;
+			qWarning() << "Submission failed:" << errorMessage;
 		}
 	}
 	else if (error != QNetworkReply::NoError) {
