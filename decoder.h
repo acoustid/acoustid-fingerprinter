@@ -116,7 +116,7 @@ inline Decoder::Decoder(const std::string &file_name)
 #endif
 {
 #ifdef HAVE_AV_AUDIO_CONVERT
-	m_buffer2 = (uint8_t *)av_malloc(AVCODEC_MAX_AUDIO_FRAME_SIZE * 2 + 16);
+	m_buffer2 = (uint8_t *)av_malloc(192000 * 2 + 16);
 #endif
 
 #if NEW_AVFRAME_API
