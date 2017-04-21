@@ -1,15 +1,16 @@
-Acoustid Fingerprinter
-======================
+# Acoustid Fingerprinter
 
-Dependencies
-------------
+A GUI application for submitting audio fingerprints to AcoustID
+
+<img src='images/screenshot.jpg' align='center'>
+
+## Dependencies
 
  * Qt <http://qt.nokia.com/>
  * FFmpeg <http://www.ffmpeg.org/>
  * Chromaprint <http://wiki.acoustid.org/wiki/Chromaprint>
 
-Installation
-------------
+## Installation
 
     $ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local .
     $ make
