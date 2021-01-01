@@ -11,12 +11,13 @@ set(INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include CACHE PATH "Installation
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
 
-find_package(Qt4 COMPONENTS QtCore QtGui QtNetwork REQUIRED)
+find_package(Qt5 COMPONENTS Core Gui Network Widgets REQUIRED)
 find_package(FFmpeg REQUIRED)
 find_package(Taglib REQUIRED)
 find_package(Chromaprint REQUIRED)
 
-include(${QT_USE_FILE})
+# HACK HACK HACK
+add_definitions( -DQT_DISABLE_DEPRECATED_BEFORE=0x000000 )
 
 if(CMAKE_BUILD_TYPE STREQUAL Release OR CMAKE_BUILD_TYPE STREQUAL MinSizeRel OR CMAKE_BUILD_TYPE STREQUAL RelWithDebInfo)
 	add_definitions(-DQT_NO_DEBUG_OUTPUT)
@@ -48,9 +49,10 @@ set(fpsubmit_SOURCES
 #set(fpsubmit_UIS fpsubmit.ui)
 set(fpsubmit_RESOURCES fingerprinter.qrc)
 
-qt4_wrap_cpp(fpsubmit_MOC ${fpsubmit_HEADERS})
-qt4_wrap_ui(fpsubmit_UIS_H ${fpsubmit_UIS})
-qt4_add_resources(fpsubmit_RESOURCES_CPP ${fpsubmit_RESOURCES})
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 if(WIN32)
 	set(fpsubmit_SOURCES ${fpsubmit_SOURCES} fingerprinter.rc)
@@ -111,7 +113,10 @@ set_target_properties(fpsubmit PROPERTIES
 )
 
 target_link_libraries(fpsubmit
-	${QT_LIBRARIES}
+	Qt5::Core
+	Qt5::Gui
+	Qt5::Network
+	Qt5::Widgets
 	${FFMPEG_LIBAVFORMAT_LIBRARIES}
 	${FFMPEG_LIBAVCODEC_LIBRARIES}
 	${FFMPEG_LIBAVUTIL_LIBRARIES}
